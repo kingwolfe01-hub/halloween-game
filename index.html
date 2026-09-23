@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Happy Halloween! 萬聖節鬼屋探照燈大冒險 (音效全開版)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background-color: #070510;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* 頂部固定常駐列 */
+    #header-bar {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 94%;
+      max-width: 660px;
+      background: rgba(18, 9, 32, 0.94);
+      backdrop-filter: blur(8px);
+      border: 2px solid #ff7b00;
+      padding: 8px 16px;
+      border-radius: 40px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
+    }
+    #speech-btn, #bgm-toggle-btn {
+      background: linear-gradient(135deg, #ff9e3b, #ff5e00);
+      border: none;
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(255, 123, 0, 0.4);
+      flex-shrink: 0;
+    }
+    #speech-btn:active, #bgm-toggle-btn:active {
+      transform: scale(0.95);
+    }
+    #task-text {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffca3a;
+      text-align: center;
+      flex-grow: 1;
+    }
+    #candy-counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 18px;
+      color: #ff65a3;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 5px 12px;
+      border-radius: 15px;
+      flex-shrink: 0;
+    }
+
+    /* 底部操作指引 */
+    #guide-pill {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid #7b2cbf;
+      color: #d1b3ff;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 2000;
+      pointer-events: none;
+      display: none;
+    }
+
+    /* 視窗容器 */
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: inline-block;
+      transform-origin: top left;
+      will-change: transform;
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    #poster-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* 探照燈遮罩 */
+    #dark-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(
+        circle var(--spotlight-radius, 145px) at var(--light-x, 50%) var(--light-y, 50%),
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 65%,
+        rgba(7, 4, 16, 0.98) 100%
+      );
+      transition: opacity 0.3s ease, background 0.04s ease-out;
+    }
+
+    #dark-overlay.active {
+      opacity: 1;
+    }
+
+    #dark-overlay.super-mode {
+      --spotlight-radius: 280px !important;
+      background: radial-gradient(
+        circle var(--spotlight-radius, 280px) at var(--light-x, 50%) var(--light-y, 50%),
+        rgba(255, 235, 150, 0.15) 0%,
+        transparent 50%,
+        rgba(7, 4, 16, 0.98) 100%
+      );
+    }
+
+    #dark-overlay.lights-on {
+      opacity: 0 !important;
+      transition: opacity 1.2s ease-in-out;
+    }
+
+    /* 停電閃爍遮罩層 */
+    #flicker-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 500;
+    }
+
+    .flickering-animation {
+      animation: powerGlitch 2.2s forwards;
+    }
+
+    @keyframes powerGlitch {
+      0% { opacity: 0; }
+      10% { opacity: 0.8; }
+      15% { opacity: 0.1; }
+      22% { opacity: 0.95; }
+      28% { opacity: 0.2; }
+      35% { opacity: 0.9; }
+      42% { opacity: 0.3; }
+      55% { opacity: 0.98; }
+      65% { opacity: 0.4; }
+      75% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+
+    /* 角色熱區 */
+    .target-box {
+      position: absolute;
+      border-radius: 25px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.001);
+      z-index: 10;
+      display: none;
+    }
+    .target-box.found {
+      border: 3.5px dashed #ffd60a;
+      background: rgba(255, 214, 10, 0.25);
+      animation: pulseGlow 1.5s infinite;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(1); box-shadow: 0 0 8px #ffd60a; }
+      50% { transform: scale(1.05); box-shadow: 0 0 25px #ffd60a; }
+      100% { transform: scale(1); box-shadow: 0 0 8px #ffd60a; }
+    }
+
+    .easter-egg {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 15;
+      background: rgba(255, 255, 255, 0.001);
+      display: none;
+    }
+
+    #magic-star {
+      position: absolute;
+      font-size: 32px;
+      cursor: pointer;
+      z-index: 20;
+      animation: starTwinkle 1.2s infinite alternate;
+      display: none;
+    }
+    @keyframes starTwinkle {
+      from { transform: scale(0.85) rotate(0deg); filter: drop-shadow(0 0 4px #ffea00); }
+      to { transform: scale(1.2) rotate(20deg); filter: drop-shadow(0 0 15px #ffd60a); }
+    }
+
+    /* 開場全貌預覽畫面 */
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 35px;
+      z-index: 1500;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 40%, transparent 100%);
+      pointer-events: none;
+    }
+    #start-btn {
+      pointer-events: auto;
+      background: linear-gradient(135deg, #ff7b00, #ff0055);
+      border: 3px solid #ffea00;
+      color: #fff;
+      font-size: 26px;
+      font-weight: 900;
+      padding: 16px 42px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(255, 123, 0, 0.8), 0 5px 15px rgba(0,0,0,0.6);
+      animation: startPulse 1.8s infinite;
+      letter-spacing: 1px;
+    }
+    #start-btn:active {
+      transform: scale(0.95);
+    }
+    @keyframes startPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    /* 倒數層 */
+    #countdown-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 3500;
+      pointer-events: none;
+    }
+    #countdown-number {
+      font-size: 130px;
+      font-weight: 900;
+      color: #ff3b30;
+      text-shadow: 0 0 35px #ff0055, 0 0 10px #fff;
+      animation: countZoom 1s ease-out;
+    }
+    #countdown-tip {
+      font-size: 26px;
+      color: #ffca3a;
+      letter-spacing: 2px;
+      margin-top: 10px;
+      text-shadow: 0 0 12px #ff7b00;
+    }
+    @keyframes countZoom {
+      0% { transform: scale(2.2); opacity: 0; }
+      40% { transform: scale(1); opacity: 1; }
+      80% { transform: scale(0.95); opacity: 1; }
+      100% { transform: scale(0.7); opacity: 0; }
+    }
+
+    /* 答對飛入糖果樣式 */
+    .flying-candy {
+      position: fixed;
+      pointer-events: none;
+      z-index: 3000;
+      transition: all 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .flying-candy img {
+      width: 85px;
+      height: 85px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 16px rgba(255, 235, 59, 0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+    }
+
+    /* 終極開箱彈窗 */
+    #mystery-box-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 4000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    /* 蓄力能量條 */
+    #charge-bar-container {
+      width: 80%;
+      max-width: 380px;
+      height: 22px;
+      background: #2a1b40;
+      border: 2px solid #ff7b00;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      box-shadow: 0 0 15px rgba(255, 123, 0, 0.5);
+    }
+    #charge-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff7b00, #ff0055, #ffd60a);
+      transition: width 0.1s ease-out;
+    }
+
+    /* 禮物箱本體 */
+    #box-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    #box-icon {
+      font-size: 110px;
+      cursor: pointer;
+      display: inline-block;
+      transition: transform 0.08s ease-out;
+      animation: boxIdle 2s infinite ease-in-out;
+    }
+    @keyframes boxIdle {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.05) rotate(3deg); }
+    }
+
+    .shaking {
+      animation: violentShake 0.1s infinite !important;
+    }
+    @keyframes violentShake {
+      0% { transform: translate(3px, 2px) rotate(2deg); }
+      25% { transform: translate(-3px, -2px) rotate(-2deg); }
+      50% { transform: translate(2px, -3px) rotate(3deg); }
+      75% { transform: translate(-2px, 3px) rotate(-3deg); }
+      100% { transform: translate(1px, -1px) rotate(1deg); }
+    }
+
+    #box-hint {
+      font-size: 24px;
+      color: #ffd60a;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255, 214, 10, 0.6);
+    }
+    #restart-btn {
+      display: none;
+      margin-top: 15px;
+      padding: 14px 38px;
+      font-size: 20px;
+      font-weight: bold;
+      background: #7b2cbf;
+      color: #fff;
+      border: 2px solid #e0aaff;
+      border-radius: 30px;
+      cursor: pointer;
+      z-index: 6000;
+    }
+
+    /* 往上噴發後如花瓣般飄落特效容器 */
+    .fountain-candy-node {
+      position: fixed;
+      z-index: 5500;
+      pointer-events: none;
+      transition: transform var(--shoot-duration, 0.8s) cubic-bezier(0.1, 0.85, 0.25, 1);
+    }
+    
+    .fountain-candy-inner {
+      width: 100%;
+      height: 100%;
+    }
+    .fountain-candy-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.85));
+    }
+
+    .falling-sway {
+      animation: petalFall var(--fall-duration, 5s) linear forwards, petalSway var(--sway-duration, 2.5s) ease-in-out infinite alternate;
+    }
+
+    @keyframes petalFall {
+      0% {
+        top: var(--peak-top);
+        opacity: 1;
+      }
+      85% {
+        opacity: 0.95;
+      }
+      100% {
+        top: 108vh;
+        opacity: 0;
+      }
+    }
+
+    @keyframes petalSway {
+      0% {
+        transform: translateX(calc(-1 * var(--sway-dist, 40px))) rotate(var(--rot-start, -20deg));
+      }
+      100% {
+        transform: translateX(var(--sway-dist, 40px)) rotate(var(--rot-end, 360deg));
+      }
+    }
+
+    #upload-container {
+      position: fixed;
+      bottom: 12px;
+      right: 15px;
+      z-index: 2000;
+      font-size: 12px;
+    }
+    #upload-container input { display: none; }
+    #upload-label {
+      cursor: pointer;
+      background: rgba(25, 15, 40, 0.9);
+      color: #ffb703;
+      padding: 5px 12px;
+      border-radius: 14px;
+      border: 1px solid #ffb703;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部遊戲狀態列 -->
+  <div id="header-bar">
+    <button id="speech-btn" onclick="speakCurrentTarget()">🔊 聽題目</button>
+    <button id="bgm-toggle-btn" onclick="toggleBGM()">🎵 音樂: 開</button>
+    <div id="task-text">準備進入鬼屋...</div>
+    <div id="candy-counter">🍬 <span id="found-count">0</span> / 8</div>
+  </div>
+
+  <div id="guide-pill">🖐️ 上下左右滑動探索鬼屋，注意聽嗶嗶雷達聲！</div>
+
+  <!-- 遊戲視窗 -->
+  <div id="viewport">
+    <div id="world">
+      <img id="poster-img" src="poster.jpg" alt="萬聖節海報底圖" onerror="this.src='https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80'">
+
+      <div id="flicker-overlay"></div>
+      <div id="dark-overlay"></div>
+
+      <!-- 8 大角色目標熱區 -->
+      <div class="target-box" id="box-bat" style="left: 5%; top: 22.5%; width: 22%; height: 8%;" data-word="bat"></div>
+      <div class="target-box" id="box-spider" style="left: 23%; top: 21.5%; width: 15%; height: 13%;" data-word="spider"></div>
+      <div class="target-box" id="box-vampire" style="left: 10%; top: 37%; width: 34%; height: 17%;" data-word="vampire"></div>
+      <div class="target-box" id="box-ghost" style="left: 45%; top: 41.5%; width: 19%; height: 13%;" data-word="ghost"></div>
+      <div class="target-box" id="box-mummy" style="left: 63%; top: 46%; width: 20%; height: 11%;" data-word="mummy"></div>
+      <div class="target-box" id="box-witch" style="left: 61%; top: 65%; width: 21%; height: 14%;" data-word="witch"></div>
+      <div class="target-box" id="box-jack-o-lantern" style="left: 29%; top: 73.5%; width: 21%; height: 10%;" data-word="jack-o'-lantern"></div>
+      <div class="target-box" id="box-pumpkin" style="left: 76%; top: 72.5%; width: 22%; height: 12%;" data-word="pumpkin"></div>
+
+      <!-- 隱藏彩蛋 -->
+      <div class="easter-egg" id="egg-tiger" style="left: 41%; top: 20%; width: 18%; height: 7%;" title="屋頂老虎"></div>
+      <div class="easter-egg" id="egg-genie" style="left: 22%; top: 58%; width: 15%; height: 8%;" title="神燈精靈"></div>
+      <div class="easter-egg" id="egg-sign" style="left: 78%; top: 68%; width: 18%; height: 6%;" title="路牌"></div>
+
+      <!-- 魔法星星道具 -->
+      <div id="magic-star" title="點擊獲得超級探照燈！">⭐</div>
+    </div>
+  </div>
+
+  <!-- 開場全貌預覽畫面 + 開始按鈕 -->
+  <div id="start-screen">
+    <button id="start-btn" onclick="startPowerOutageSequence()">🎃 開始萬聖節尋寶</button>
+  </div>
+
+  <!-- 停電倒數層 -->
+  <div id="countdown-overlay">
+    <div id="countdown-tip">⚠️ 電力中斷！探照燈即將啟動...</div>
+    <div id="countdown-number">3</div>
+  </div>
+
+  <!-- 終極開箱儀式彈窗 -->
+  <div id="mystery-box-modal">
+    <h1 style="color: #ff9e3b; font-size: 38px;">🎁 Find Candy! 魔法開箱！</h1>
+    <p style="color: #eee; font-size: 19px;">大家一起快速連續狂點禮物箱充能！</p>
+    
+    <div id="charge-bar-container">
+      <div id="charge-bar-fill"></div>
+    </div>
+
+    <div id="box-wrapper">
+      <div id="box-icon" onclick="tapChargeBox()">🎁</div>
+    </div>
+
+    <div id="box-hint">蓄力中... 點擊！</div>
+    <button id="restart-btn" onclick="returnToPreview()">再玩一次 ↺</button>
+  </div>
+
+  <div id="upload-container">
+    <label id="upload-label" for="img-uploader">🖼️ 載入海報圖檔</label>
+    <input type="file" id="img-uploader" accept="image/*" onchange="loadUserPoster(event)">
+  </div>
+
+  <script>
+    // 38 款萬聖節糖果圖檔清單
+    const CANDY_IMAGES = Array.from({ length: 38 }, (_, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      return `萬聖節-icon_${num}.png`;
+    });
+
+    // 8大角色與專屬音效配對
+    const VOCABULARY = [
+      { word: 'bat', elId: 'box-bat', sfx: 'sfx_bat.mp3' },
+      { word: 'spider', elId: 'box-spider', sfx: 'sfx_spider.mp3' },
+      { word: 'vampire', elId: 'box-vampire', sfx: 'sfx_vampire.mp3' },
+      { word: 'ghost', elId: 'box-ghost', sfx: 'sfx_ghost.mp3' },
+      { word: 'mummy', elId: 'box-mummy', sfx: 'sfx_mummy.mp3' },
+      { word: 'witch', elId: 'box-witch', sfx: 'sfx_witch.mp3' },
+      { word: "jack-o'-lantern", elId: 'box-jack-o-lantern', sfx: 'sfx_jackolantern.mp3' },
+      { word: 'pumpkin', elId: 'box-pumpkin', sfx: 'sfx_pumpkin.mp3' }
+    ];
+
+    // ==========================================
+    // 🎵 音效管理器（Sound Manager）
+    // ==========================================
+    const SOUNDS = {
+      // BGM
+      bgm: new Audio('bgm_spooky_fun.mp3'),
+      // 開場與過場
+      btnStart: new Audio('btn_start.mp3'),
+      powerGlitch: new Audio('power_glitch.mp3'),
+      powerOff: new Audio('power_off.mp3'),
+      countdownTick: new Audio('countdown_tick.mp3'),
+      gameStartGo: new Audio('game_start_go.mp3'),
+      // 探索互動
+      radarBeep: new Audio('radar_beep.mp3'),
+      correctDing: new Audio('correct_ding.mp3'),
+      wrongBuzz: new Audio('wrong_buzz.mp3'),
+      candyFly: new Audio('candy_fly.mp3'),
+      powerupStar: new Audio('powerup_star.mp3'),
+      // 彩蛋
+      eggTiger: new Audio('egg_tiger.mp3'),
+      eggGenie: new Audio('egg_genie.mp3'),
+      eggSign: new Audio('egg_sign.mp3'),
+      // 開箱與糖果雨
+      boxTap: new Audio('box_tap.mp3'),
+      boxChargeFull: new Audio('box_charge_full.mp3'),
+      boxBurst: new Audio('box_burst.mp3'),
+      candyShootWhoosh: new Audio('candy_shoot_whoosh.mp3'),
+      candyPetalFall: new Audio('candy_petal_fall.mp3'),
+      gameVictory: new Audio('game_victory.mp3')
+    };
+
+    // BGM 預設參數
+    SOUNDS.bgm.loop = true;
+    SOUNDS.bgm.volume = 0.22;
+    let isBgmPlaying = false;
+
+    // 通用播放函數（支援音量、重置與防呆）
+    function playSfx(audioObj, volume = 0.8) {
+      if (!audioObj) return;
+      try {
+        audioObj.currentTime = 0;
+        audioObj.volume = volume;
+        const playPromise = audioObj.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            // 自動防呆：若檔案不存在或瀏覽器限制，不報錯阻礙遊戲
+          });
+        }
+      } catch (err) {}
+    }
+
+    // 播放自訂路徑音效檔
+    function playCustomFile(filePath, volume = 0.8) {
+      if (!filePath) return;
+      try {
+        const tempAudio = new Audio(filePath);
+        tempAudio.volume = volume;
+        tempAudio.play().catch(e => {});
+      } catch (err) {}
+    }
+
+    // 切換 BGM 播放狀態
+    function toggleBGM() {
+      const btn = document.getElementById('bgm-toggle-btn');
+      if (isBgmPlaying) {
+        SOUNDS.bgm.pause();
+        isBgmPlaying = false;
+        btn.innerText = '🎵 音樂: 關';
+      } else {
+        SOUNDS.bgm.play().then(() => {
+          isBgmPlaying = true;
+          btn.innerText = '🎵 音樂: 開';
+        }).catch(e => {});
+      }
+    }
+
+    let remainingTargets = [];
+    let currentTarget = null;
+    let foundCount = 0;
+    let isPlaying = false;
+
+    const CHARGE_THRESHOLD = 15;
+    let currentCharge = 0;
+    let isExploded = false;
+
+    const viewport = document.getElementById('viewport');
+    const world = document.getElementById('world');
+    const posterImg = document.getElementById('poster-img');
+    const overlay = document.getElementById('dark-overlay');
+    const flickerOverlay = document.getElementById('flicker-overlay');
+    const startScreen = document.getElementById('start-screen');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const headerBar = document.getElementById('header-bar');
+    const guidePill = document.getElementById('guide-pill');
+    const taskText = document.getElementById('task-text');
+    const foundCounter = document.getElementById('found-count');
+    const mysteryModal = document.getElementById('mystery-box-modal');
+    const boxIcon = document.getElementById('box-icon');
+    const boxHint = document.getElementById('box-hint');
+    const chargeBarFill = document.getElementById('charge-bar-fill');
+    const restartBtn = document.getElementById('restart-btn');
+    const magicStar = document.getElementById('magic-star');
+
+    let posX = 0;
+    let posY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    // 音效雷達（越靠近目標，頻率越急促播放 radar_beep.mp3）
+    let lastRadarTime = 0;
+    function checkRadarProximity(worldX, worldY) {
+      if (!isPlaying || !currentTarget) return;
+      const targetEl = document.getElementById(currentTarget.elId);
+      if (!targetEl) return;
+
+      const targetCenterX = targetEl.offsetLeft + targetEl.offsetWidth / 2;
+      const targetCenterY = targetEl.offsetTop + targetEl.offsetHeight / 2;
+      const dist = Math.hypot(worldX - targetCenterX, worldY - targetCenterY);
+
+      const now = Date.now();
+      if (dist < 220 && (now - lastRadarTime > 320)) {
+        lastRadarTime = now;
+        playSfx(SOUNDS.radarBeep, 0.4);
+      }
+    }
+
+    function setWorldSize(scaleMultiplier = 1.0) {
+      const naturalW = posterImg.naturalWidth || 680;
+      const naturalH = posterImg.naturalHeight || 1060;
+      const aspectRatio = naturalW / naturalH;
+
+      let baseHeight = viewport.clientHeight * 0.95;
+      let baseWidth = baseHeight * aspectRatio;
+
+      if (baseWidth > viewport.clientWidth * 0.95) {
+        baseWidth = viewport.clientWidth * 0.95;
+        baseHeight = baseWidth / aspectRatio;
+      }
+
+      world.style.width = `${baseWidth * scaleMultiplier}px`;
+      world.style.height = `${baseHeight * scaleMultiplier}px`;
+
+      applyTransform();
+    }
+
+    function applyTransform() {
+      const minX = viewport.clientWidth - world.offsetWidth;
+      const minY = viewport.clientHeight - world.offsetHeight;
+
+      if (world.offsetWidth > viewport.clientWidth) {
+        posX = Math.min(0, Math.max(minX, posX));
+      } else {
+        posX = (viewport.clientWidth - world.offsetWidth) / 2;
+      }
+
+      if (world.offsetHeight > viewport.clientHeight) {
+        posY = Math.min(0, Math.max(minY, posY));
+      } else {
+        posY = (viewport.clientHeight - world.offsetHeight) / 2;
+      }
+
+      world.style.transform = `translate(${posX}px, ${posY}px)`;
+    }
+
+    function centerMap() {
+      posX = (viewport.clientWidth - world.offsetWidth) / 2;
+      posY = (viewport.clientHeight - world.offsetHeight) / 3.2;
+      applyTransform();
+    }
+
+    function showFullPosterPreview() {
+      isPlaying = false;
+      headerBar.style.display = 'none';
+      guidePill.style.display = 'none';
+      startScreen.style.display = 'flex';
+      overlay.classList.remove('active');
+      flickerOverlay.style.opacity = '0';
+      flickerOverlay.classList.remove('flickering-animation');
+
+      document.querySelectorAll('.target-box, .easter-egg').forEach(el => el.style.display = 'none');
+      magicStar.style.display = 'none';
+
+      setWorldSize(1.0);
+      posX = (viewport.clientWidth - world.offsetWidth) / 2;
+      posY = (viewport.clientHeight - world.offsetHeight) / 2;
+      applyTransform();
+    }
+
+    posterImg.onload = () => {
+      showFullPosterPreview();
+    };
+
+    // === 開始停電過場 ===
+    function startPowerOutageSequence() {
+      startScreen.style.display = 'none';
+      playSfx(SOUNDS.btnStart, 0.9);
+
+      // 開始播放 BGM（使用者互動後解鎖音訊）
+      if (!isBgmPlaying) {
+        SOUNDS.bgm.play().then(() => { isBgmPlaying = true; }).catch(e => {});
+      }
+
+      // 1. 電力接觸不良閃爍
+      flickerOverlay.classList.add('flickering-animation');
+      playSfx(SOUNDS.powerGlitch, 0.9);
+
+      // 2. 徹底跳電全黑 + 倒數計時
+      setTimeout(() => {
+        playSfx(SOUNDS.powerOff, 0.8);
+        countdownOverlay.style.display = 'flex';
+        let count = 3;
+        countdownNumber.innerText = count;
+        playSfx(SOUNDS.countdownTick, 0.8);
+
+        const countInterval = setInterval(() => {
+          count--;
+          if (count > 0) {
+            countdownNumber.style.animation = 'none';
+            void countdownNumber.offsetWidth;
+            countdownNumber.style.animation = 'countZoom 1s ease-out';
+            countdownNumber.innerText = count;
+            playSfx(SOUNDS.countdownTick, 0.8);
+          } else {
+            clearInterval(countInterval);
+            countdownNumber.innerText = 'GO!';
+            playSfx(SOUNDS.gameStartGo, 0.95);
+
+            setTimeout(() => {
+              countdownOverlay.style.display = 'none';
+              flickerOverlay.classList.remove('flickering-animation');
+              flickerOverlay.style.opacity = '0';
+              startExplorationGame();
+            }, 650);
+          }
+        }, 1000);
+      }, 2200);
+    }
+
+    function startExplorationGame() {
+      isPlaying = true;
+      foundCount = 0;
+      foundCounter.innerText = foundCount;
+      headerBar.style.display = 'flex';
+      guidePill.style.display = 'block';
+      overlay.classList.add('active');
+      overlay.classList.remove('lights-on');
+      mysteryModal.style.display = 'none';
+
+      currentCharge = 0;
+      isExploded = false;
+      chargeBarFill.style.width = '0%';
+      boxIcon.innerText = "🎁";
+      boxIcon.className = "";
+      boxHint.innerText = `快速連點充能中... 0%`;
+      restartBtn.style.display = 'none';
+
+      document.querySelectorAll('.target-box, .easter-egg').forEach(el => {
+        el.style.display = 'block';
+        el.classList.remove('found');
+      });
+
+      setWorldSize(2.0);
+      centerMap();
+      spawnMagicStar();
+
+      remainingTargets = [...VOCABULARY].sort(() => Math.random() - 0.5);
+      nextQuestion();
+    }
+
+    function updateLightPosition(screenX, screenY) {
+      if (!isPlaying) return;
+      const worldX = screenX - posX;
+      const worldY = screenY - posY;
+
+      const px = (worldX / world.offsetWidth) * 100;
+      const py = (worldY / world.offsetHeight) * 100;
+
+      overlay.style.setProperty('--light-x', `${px}%`);
+      overlay.style.setProperty('--light-y', `${py}%`);
+
+      checkRadarProximity(worldX, worldY);
+    }
+
+    viewport.addEventListener('pointerdown', (e) => {
+      if (!isPlaying) return;
+      isDragging = true;
+      startX = e.clientX - posX;
+      startY = e.clientY - posY;
+      updateLightPosition(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isPlaying) return;
+      updateLightPosition(e.clientX, e.clientY);
+      if (!isDragging) return;
+
+      posX = e.clientX - startX;
+      posY = e.clientY - startY;
+      applyTransform();
+    });
+
+    window.addEventListener('pointerup', () => {
+      isDragging = false;
+    });
+
+    // 英語語音發音
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.85;
+        window.speechSynthesis.speak(utter);
+      }
+    }
+
+    function speakCurrentTarget() {
+      if (currentTarget) {
+        speak(`Where is the ${currentTarget.word}?`);
+      }
+    }
+
+    function spawnMagicStar() {
+      magicStar.style.display = 'block';
+      magicStar.style.left = `${15 + Math.random() * 70}%`;
+      magicStar.style.top = `${25 + Math.random() * 55}%`;
+    }
+
+    magicStar.addEventListener('pointerup', (e) => {
+      e.stopPropagation();
+      magicStar.style.display = 'none';
+      playSfx(SOUNDS.powerupStar, 0.9);
+      speak("Super Spotlight activated!");
+
+      overlay.classList.add('super-mode');
+      setTimeout(() => {
+        overlay.classList.remove('super-mode');
+      }, 6000);
+    });
+
+    // 彩蛋點擊音效
+    document.getElementById('egg-tiger').addEventListener('pointerup', () => {
+      playSfx(SOUNDS.eggTiger, 0.9);
+      speak("Roar! I am a cute tiger!");
+    });
+    document.getElementById('egg-genie').addEventListener('pointerup', () => {
+      playSfx(SOUNDS.eggGenie, 0.9);
+      speak("Magic Genie! Make a wish!");
+    });
+    document.getElementById('egg-sign').addEventListener('pointerup', () => {
+      playSfx(SOUNDS.eggSign, 0.85);
+      speak("Trick or treat! Smell my feet!");
+    });
+
+    function nextQuestion() {
+      if (remainingTargets.length === 0) {
+        triggerMysteryBox();
+        return;
+      }
+      currentTarget = remainingTargets.pop();
+      taskText.innerText = `Find the 【 ${currentTarget.word} 】`;
+      speakCurrentTarget();
+    }
+
+    let clickStartX = 0, clickStartY = 0;
+    document.querySelectorAll('.target-box').forEach(box => {
+      box.addEventListener('pointerdown', (e) => {
+        clickStartX = e.clientX;
+        clickStartY = e.clientY;
+      });
+
+      box.addEventListener('pointerup', function(e) {
+        const moveDist = Math.hypot(e.clientX - clickStartX, e.clientY - clickStartY);
+        if (moveDist > 8) return;
+
+        if (!currentTarget) return;
+        const clickedWord = this.getAttribute('data-word');
+
+        if (clickedWord === currentTarget.word) {
+          this.classList.add('found');
+          foundCount++;
+          foundCounter.innerText = foundCount;
+
+          // 播放答對鈴聲 + 該角色專屬登場音
+          playSfx(SOUNDS.correctDing, 0.85);
+          if (currentTarget.sfx) {
+            setTimeout(() => playCustomFile(currentTarget.sfx, 0.9), 200);
+          }
+
+          spawnFlyingCandy(e.clientX, e.clientY);
+          speak(`Great job! ${currentTarget.word}!`);
+
+          currentTarget = null;
+          taskText.innerText = `🎉 答對了！`;
+          setTimeout(nextQuestion, 1300);
+        } else {
+          // 點錯音效
+          playSfx(SOUNDS.wrongBuzz, 0.6);
+          speak(`Try again! Find the ${currentTarget.word}`);
+        }
+      });
+    });
+
+    // 答對糖果飛入計數器
+    function spawnFlyingCandy(clientX, clientY) {
+      playSfx(SOUNDS.candyFly, 0.7);
+
+      const candy = document.createElement('div');
+      candy.className = 'flying-candy';
+      
+      const randomImg = CANDY_IMAGES[Math.floor(Math.random() * CANDY_IMAGES.length)];
+      candy.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\\'font-size:70px;\\'>🍬</span>'">`;
+      
+      candy.style.left = `${clientX - 42}px`;
+      candy.style.top = `${clientY - 42}px`;
+      document.body.appendChild(candy);
+
+      const targetRect = document.getElementById('candy-counter').getBoundingClientRect();
+      setTimeout(() => {
+        candy.style.left = `${targetRect.left + 10}px`;
+        candy.style.top = `${targetRect.top + 5}px`;
+        candy.style.transform = 'scale(0.35) rotate(360deg)';
+        candy.style.opacity = '0';
+      }, 50);
+
+      setTimeout(() => candy.remove(), 950);
+    }
+
+    function triggerMysteryBox() {
+      overlay.classList.add('lights-on');
+      mysteryModal.style.display = 'flex';
+      speak("Tap the box together to unleash the candy explosion!");
+    }
+
+    // 敲擊箱子充能
+    function tapChargeBox() {
+      if (isExploded) return;
+
+      currentCharge++;
+      const progressPercent = Math.min(100, Math.floor((currentCharge / CHARGE_THRESHOLD) * 100));
+      chargeBarFill.style.width = `${progressPercent}%`;
+
+      // 敲擊箱子音效
+      playSfx(SOUNDS.boxTap, 0.7 + (currentCharge / CHARGE_THRESHOLD) * 0.3);
+
+      const scale = 1 + (currentCharge / CHARGE_THRESHOLD) * 0.35;
+      boxIcon.style.transform = `scale(${scale})`;
+      boxIcon.classList.add('shaking');
+
+      boxHint.innerText = `🔥 能量充能中：${progressPercent}%！快點！`;
+
+      if (currentCharge >= CHARGE_THRESHOLD) {
+        playSfx(SOUNDS.boxChargeFull, 0.95);
+        explodeCandyFountain();
+      }
+    }
+
+    // === 核心噴發：往上噴射 + 旋轉花瓣飄落 ===
+    function explodeCandyFountain() {
+      isExploded = true;
+      boxIcon.classList.remove('shaking');
+      boxIcon.innerText = "🎃";
+      boxIcon.style.transform = "scale(1.4)";
+      boxHint.innerHTML = `💥 轟！糖果大噴發！HAPPY HALLOWEEN! 💥`;
+      restartBtn.style.display = 'block';
+
+      // 炸開音效 + 噴射破空聲 + 勝利慶祝樂
+      playSfx(SOUNDS.boxBurst, 1.0);
+      setTimeout(() => playSfx(SOUNDS.candyShootWhoosh, 0.9), 100);
+      setTimeout(() => playSfx(SOUNDS.candyPetalFall, 0.8), 650);
+      setTimeout(() => playSfx(SOUNDS.gameVictory, 0.9), 1500);
+
+      speak("Happy Halloween! The candy volcano is erupting!");
+
+      const boxRect = boxIcon.getBoundingClientRect();
+      const originX = boxRect.left + boxRect.width / 2;
+      const originY = boxRect.top + boxRect.height / 2;
+
+      const totalCandies = 100;
+      const intervalMs = 20;
+
+      for (let i = 0; i < totalCandies; i++) {
+        setTimeout(() => {
+          shootPetalCandy(originX, originY);
+        }, i * intervalMs);
+      }
+    }
+
+    function shootPetalCandy(startX, startY) {
+      const node = document.createElement('div');
+      node.className = 'fountain-candy-node';
+
+      const inner = document.createElement('div');
+      inner.className = 'fountain-candy-inner';
+
+      const randomImg = CANDY_IMAGES[Math.floor(Math.random() * CANDY_IMAGES.length)];
+      const size = 85 + Math.floor(Math.random() * 50); 
+      
+      node.style.width = `${size}px`;
+      node.style.height = `${size}px`;
+      node.style.left = `${startX - size / 2}px`;
+      node.style.top = `${startY - size / 2}px`;
+
+      inner.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\\'font-size:${size}px;\\'>🍬</span>'">`;
+      node.appendChild(inner);
+      document.body.appendChild(node);
+
+      const shootUpDist = -(260 + Math.random() * 360);
+      const shootSideDist = (Math.random() - 0.5) * window.innerWidth * 0.9;
+      const shootDuration = 0.65 + Math.random() * 0.3;
+      node.style.setProperty('--shoot-duration', `${shootDuration}s`);
+
+      requestAnimationFrame(() => {
+        node.style.transform = `translate(${shootSideDist}px, ${shootUpDist}px) scale(1.15) rotate(${Math.random() * 90 - 45}deg)`;
+      });
+
+      setTimeout(() => {
+        const peakRect = node.getBoundingClientRect();
+        node.style.transition = 'none';
+        node.style.transform = 'none';
+        node.style.left = `${peakRect.left}px`;
+        node.style.top = `${peakRect.top}px`;
+
+        const fallDuration = 4.5 + Math.random() * 3.0;
+        const swayDuration = 2.0 + Math.random() * 1.5;
+        const swayDist = 35 + Math.random() * 55;
+        const rotStart = Math.random() * 90 - 45;
+        const rotEnd = rotStart + (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360);
+
+        node.style.setProperty('--peak-top', `${peakRect.top}px`);
+        node.style.setProperty('--fall-duration', `${fallDuration}s`);
+        node.style.setProperty('--sway-duration', `${swayDuration}s`);
+        node.style.setProperty('--sway-dist', `${swayDist}px`);
+        node.style.setProperty('--rot-start', `${rotStart}deg`);
+        node.style.setProperty('--rot-end', `${rotEnd}deg`);
+
+        inner.classList.add('falling-sway');
+
+        setTimeout(() => {
+          node.remove();
+        }, fallDuration * 1000);
+      }, shootDuration * 1000);
+    }
+
+    function returnToPreview() {
+      mysteryModal.style.display = 'none';
+      showFullPosterPreview();
+    }
+
+    function loadUserPoster(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          posterImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    window.onload = () => {
+      showFullPosterPreview();
+    };
+    window.onresize = () => {
+      setWorldSize(isPlaying ? 2.0 : 1.0);
+      applyTransform();
+    };
+  </script>
+</body>
+</html>
