@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Happy Halloween! 萬聖節鬼屋探照燈大冒險 (音效全開版)</title>
+  <title>Happy Halloween! 萬聖節鬼屋大螢幕教學版</title>
   <style>
     * {
       box-sizing: border-box;
@@ -31,37 +31,38 @@
       display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      width: 94%;
-      max-width: 660px;
+      gap: 8px;
+      width: 95%;
+      max-width: 760px;
       background: rgba(18, 9, 32, 0.94);
       backdrop-filter: blur(8px);
       border: 2px solid #ff7b00;
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-radius: 40px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
     }
-    #speech-btn, #bgm-toggle-btn {
+    .header-btn {
       background: linear-gradient(135deg, #ff9e3b, #ff5e00);
       border: none;
       color: #fff;
-      padding: 7px 14px;
+      padding: 8px 16px;
       border-radius: 20px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold;
       box-shadow: 0 2px 8px rgba(255, 123, 0, 0.4);
       flex-shrink: 0;
     }
-    #speech-btn:active, #bgm-toggle-btn:active {
-      transform: scale(0.95);
-    }
+    .header-btn:active { transform: scale(0.95); }
     #task-text {
       font-size: 18px;
       font-weight: bold;
       color: #ffca3a;
       text-align: center;
       flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     #candy-counter {
       display: flex;
@@ -76,7 +77,46 @@
       flex-shrink: 0;
     }
 
-    /* 底部操作指引 */
+    /* 限時競速時間條 */
+    #timer-bar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2100;
+      display: none;
+    }
+    #timer-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #06d6a0, #ffd166, #ef476f);
+      transition: width 0.2s linear;
+    }
+
+    /* 頂部線索提示條 */
+    #hint-pill {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(43, 10, 61, 0.95);
+      border: 1px solid #ffd166;
+      color: #ffe6a7;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 15px;
+      z-index: 2000;
+      display: none;
+      box-shadow: 0 0 15px rgba(255, 209, 102, 0.4);
+      animation: fadeInDown 0.3s ease;
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translate(-50%, -10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
     #guide-pill {
       position: fixed;
       bottom: 12px;
@@ -87,9 +127,24 @@
       color: #d1b3ff;
       padding: 6px 16px;
       border-radius: 20px;
-      font-size: 13px;
+      font-size: 14px;
       z-index: 2000;
       pointer-events: none;
+      display: none;
+    }
+    #return-home-btn {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 2200;
+      background: rgba(18, 9, 32, 0.85);
+      border: 2px solid #ff7b00;
+      color: #ffb703;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
       display: none;
     }
 
@@ -101,7 +156,6 @@
       overflow: hidden;
       touch-action: none;
     }
-
     #world {
       position: absolute;
       top: 0;
@@ -111,7 +165,6 @@
       will-change: transform;
       transition: width 0.3s ease, height 0.3s ease;
     }
-
     #poster-img {
       width: 100%;
       height: 100%;
@@ -134,11 +187,7 @@
       );
       transition: opacity 0.3s ease, background 0.04s ease-out;
     }
-
-    #dark-overlay.active {
-      opacity: 1;
-    }
-
+    #dark-overlay.active { opacity: 1; }
     #dark-overlay.super-mode {
       --spotlight-radius: 280px !important;
       background: radial-gradient(
@@ -148,13 +197,12 @@
         rgba(7, 4, 16, 0.98) 100%
       );
     }
-
     #dark-overlay.lights-on {
       opacity: 0 !important;
-      transition: opacity 1.2s ease-in-out;
+      transition: opacity 0.8s ease-in-out;
     }
 
-    /* 停電閃爍遮罩層 */
+    /* 停電閃爍層 */
     #flicker-overlay {
       position: absolute;
       inset: 0;
@@ -163,11 +211,7 @@
       pointer-events: none;
       z-index: 500;
     }
-
-    .flickering-animation {
-      animation: powerGlitch 2.2s forwards;
-    }
-
+    .flickering-animation { animation: powerGlitch 2.2s forwards; }
     @keyframes powerGlitch {
       0% { opacity: 0; }
       10% { opacity: 0.8; }
@@ -192,14 +236,59 @@
       display: none;
     }
     .target-box.found {
-      border: 3.5px dashed #ffd60a;
+      border: 4px dashed #ffd60a;
       background: rgba(255, 214, 10, 0.25);
       animation: pulseGlow 1.5s infinite;
     }
     @keyframes pulseGlow {
       0% { transform: scale(1); box-shadow: 0 0 8px #ffd60a; }
-      50% { transform: scale(1.05); box-shadow: 0 0 25px #ffd60a; }
+      50% { transform: scale(1.05); box-shadow: 0 0 20px #ffd60a; }
       100% { transform: scale(1); box-shadow: 0 0 8px #ffd60a; }
+    }
+
+    .target-box.explore-mode {
+      display: block !important;
+      border: 3px dashed rgba(255, 214, 10, 0.85);
+      background: rgba(255, 214, 10, 0.15);
+      box-shadow: 0 0 14px rgba(255, 214, 10, 0.5);
+    }
+    .explore-badge {
+      position: absolute;
+      top: -14px;
+      left: -10px;
+      background: #ff5400;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 14px;
+      border: 1.5px solid #ffd60a;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .hint-beacon {
+      border: 4px solid #00f5d4 !important;
+      box-shadow: 0 0 25px #00f5d4, inset 0 0 15px #00f5d4 !important;
+      animation: beaconPulse 1s infinite alternate !important;
+    }
+    @keyframes beaconPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+    .hint-arrow {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      color: #00f5d4;
+      animation: bounceDown 0.6s infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes bounceDown {
+      from { transform: translate(-50%, -6px); }
+      to { transform: translate(-50%, 6px); }
     }
 
     .easter-egg {
@@ -210,21 +299,20 @@
       background: rgba(255, 255, 255, 0.001);
       display: none;
     }
-
     #magic-star {
       position: absolute;
-      font-size: 32px;
+      font-size: 36px;
       cursor: pointer;
       z-index: 20;
       animation: starTwinkle 1.2s infinite alternate;
       display: none;
     }
     @keyframes starTwinkle {
-      from { transform: scale(0.85) rotate(0deg); filter: drop-shadow(0 0 4px #ffea00); }
-      to { transform: scale(1.2) rotate(20deg); filter: drop-shadow(0 0 15px #ffd60a); }
+      from { transform: scale(0.85); filter: drop-shadow(0 0 4px #ffea00); }
+      to { transform: scale(1.2); filter: drop-shadow(0 0 15px #ffd60a); }
     }
 
-    /* 開場全貌預覽畫面 */
+    /* 開場主選單 (Part 1, Part 2, Challenge) */
     #start-screen {
       position: fixed;
       inset: 0;
@@ -232,32 +320,95 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 35px;
+      padding-bottom: 40px;
       z-index: 1500;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 40%, transparent 100%);
+      background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.25) 45%, transparent 100%);
       pointer-events: none;
     }
-    #start-btn {
+    .start-btn-group {
       pointer-events: auto;
-      background: linear-gradient(135deg, #ff7b00, #ff0055);
-      border: 3px solid #ffea00;
-      color: #fff;
-      font-size: 26px;
-      font-weight: 900;
-      padding: 16px 42px;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 0 30px rgba(255, 123, 0, 0.8), 0 5px 15px rgba(0,0,0,0.6);
-      animation: startPulse 1.8s infinite;
-      letter-spacing: 1px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 90%;
+      max-width: 440px;
     }
-    #start-btn:active {
-      transform: scale(0.95);
+    .menu-main-btn {
+      color: #fff;
+      font-size: 19px;
+      font-weight: 800;
+      padding: 13px 20px;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      border: 2px solid transparent;
+      text-align: center;
+      transition: transform 0.1s ease;
+    }
+    .menu-main-btn:active { transform: scale(0.96); }
+    #btn-mode-part1 {
+      background: linear-gradient(135deg, #7209b7, #3a0ca3);
+      border-color: #b5179e;
+    }
+    #btn-mode-part2 {
+      background: linear-gradient(135deg, #058c68, #06d6a0);
+      border-color: #ffd166;
+      color: #03291e;
+    }
+    #btn-mode-game {
+      background: linear-gradient(135deg, #ff7b00, #f72585);
+      border-color: #ffea00;
+      animation: startPulse 2s infinite;
     }
     @keyframes startPulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
+      50% { transform: scale(1.03); }
     }
+
+    /* 模式選擇彈窗 */
+    #mode-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 3800;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-card {
+      background: #19092b;
+      border: 2px solid #ff7b00;
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 0 30px rgba(255, 123, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-title {
+      font-size: 22px;
+      color: #ff9e3b;
+      font-weight: bold;
+      text-align: center;
+    }
+    .mode-select-btn {
+      background: #2b124c;
+      border: 1.5px solid #7b2cbf;
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 14px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mode-select-btn:active { background: #3c1a69; }
+    .mode-btn-title { font-size: 17px; font-weight: bold; color: #ffd166; }
+    .mode-btn-desc { font-size: 13px; color: #d8b4e2; }
 
     /* 倒數層 */
     #countdown-overlay {
@@ -274,24 +425,16 @@
       font-size: 130px;
       font-weight: 900;
       color: #ff3b30;
-      text-shadow: 0 0 35px #ff0055, 0 0 10px #fff;
-      animation: countZoom 1s ease-out;
+      text-shadow: 0 0 30px #ff0055, 0 0 10px #fff;
     }
     #countdown-tip {
-      font-size: 26px;
+      font-size: 24px;
       color: #ffca3a;
       letter-spacing: 2px;
       margin-top: 10px;
-      text-shadow: 0 0 12px #ff7b00;
-    }
-    @keyframes countZoom {
-      0% { transform: scale(2.2); opacity: 0; }
-      40% { transform: scale(1); opacity: 1; }
-      80% { transform: scale(0.95); opacity: 1; }
-      100% { transform: scale(0.7); opacity: 0; }
+      text-shadow: 0 0 10px #ff7b00;
     }
 
-    /* 答對飛入糖果樣式 */
     .flying-candy {
       position: fixed;
       pointer-events: none;
@@ -299,10 +442,332 @@
       transition: all 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .flying-candy img {
-      width: 85px;
-      height: 85px;
+      width: 75px;
+      height: 75px;
       object-fit: contain;
-      filter: drop-shadow(0 0 16px rgba(255, 235, 59, 0.95)) drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+    }
+
+    /* ==============================================
+       大螢幕教學彈窗 (Part 1 單字 / Part 2 句型替換)
+       ============================================== */
+    #flashcard-modal, #part2-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.84);
+      z-index: 3600;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .flashcard-box {
+      background: linear-gradient(145deg, #1d0933, #0d0319);
+      border: 3px solid #ffd166;
+      border-radius: 26px;
+      padding: 24px 28px;
+      max-width: 760px;
+      width: 95%;
+      max-height: 94vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(255, 209, 102, 0.45);
+      animation: popIn 0.25s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .fc-header-simple {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(255, 209, 102, 0.35);
+      padding-bottom: 12px;
+    }
+    .fc-unit-tag {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffd166;
+      letter-spacing: 1px;
+    }
+    .fc-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid #ffd166;
+      color: #fff;
+      font-size: 26px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .fc-close:active { transform: scale(0.92); }
+
+    /* Part 1 單字特寫版面 */
+    .fc-hero-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 14px 18px;
+      border-radius: 20px;
+      border: 2px solid rgba(255, 209, 102, 0.25);
+    }
+    .fc-avatar-big {
+      width: 135px;
+      height: 135px;
+      border-radius: 18px;
+      border: 3px solid #ffd166;
+      object-fit: contain;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 4px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+    .fc-hero-title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      flex-grow: 1;
+    }
+    .fc-title-word {
+      font-size: 46px;
+      font-weight: 900;
+      color: #ff9e3b;
+      letter-spacing: 1px;
+    }
+    .fc-click-hint {
+      font-size: 14px;
+      color: #ffd166;
+      font-weight: bold;
+    }
+
+    /* 點擊發音卡片 */
+    .fc-clickable-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid rgba(255, 209, 102, 0.35);
+      border-radius: 18px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fc-clickable-card:hover {
+      border-color: #ffd166;
+      background: rgba(255, 209, 102, 0.12);
+    }
+    .fc-clickable-card:active {
+      transform: scale(0.98);
+      background: rgba(255, 209, 102, 0.22);
+    }
+    .fc-label {
+      font-size: 14px;
+      color: #ff65a3;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .fc-content-big {
+      font-size: 30px;
+      color: #ffffff;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+    .fc-tap-badge {
+      align-self: flex-end;
+      font-size: 12px;
+      color: #ffd166;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 209, 102, 0.4);
+    }
+
+    /* 3選1看圖選題區 (Part 1 內) */
+    #quick-quiz-area {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #06d6a0;
+      border-radius: 20px;
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .quiz-options-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .quiz-option-card {
+      background: #24123a;
+      border: 2.5px solid #7b2cbf;
+      border-radius: 16px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.1s ease, border-color 0.2s ease;
+    }
+    .quiz-option-card:hover { border-color: #ffd166; }
+    .quiz-option-card:active { transform: scale(0.96); }
+    .quiz-img {
+      width: 100%;
+      height: 105px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+    }
+    .quiz-word-label {
+      font-size: 19px;
+      font-weight: 900;
+      color: #ffd166;
+      text-align: center;
+    }
+    .quiz-option-card.correct {
+      border-color: #06d6a0 !important;
+      background: rgba(6, 214, 160, 0.28) !important;
+      box-shadow: 0 0 18px #06d6a0;
+    }
+    .quiz-option-card.wrong {
+      border-color: #ef476f !important;
+      animation: shakeWrong 0.3s;
+    }
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* ==============================================
+       Part 2 句型大聲說 (快速閃視卡替換練習區)
+       ============================================== */
+    .p2-model-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px dashed rgba(255, 209, 102, 0.4);
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .p2-model-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #ffca3a;
+      letter-spacing: 1px;
+    }
+
+    /* 替換主舞台 */
+    .p2-drill-stage {
+      background: rgba(20, 10, 36, 0.85);
+      border: 2.5px solid #06d6a0;
+      border-radius: 22px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 0 25px rgba(6, 214, 160, 0.25);
+    }
+    .p2-drill-sentence {
+      font-size: 34px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    /* 閃視卡插槽 */
+    .p2-flash-slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #391359;
+      border: 3px solid #ffd166;
+      border-radius: 20px;
+      padding: 8px 18px;
+      cursor: pointer;
+      animation: slotPulse 1.2s infinite alternate;
+      box-shadow: 0 0 18px rgba(255, 209, 102, 0.5);
+    }
+    @keyframes slotPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.04); }
+    }
+    .p2-flash-slot:active { transform: scale(0.96); }
+    .p2-slot-img {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.3);
+    }
+    .p2-slot-word {
+      font-size: 34px;
+      color: #ffd166;
+      font-weight: 900;
+    }
+
+    .p2-controls-row {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    /* 成果結算畫面 */
+    #victory-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 3900;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .victory-card {
+      background: linear-gradient(135deg, #240046, #10002b);
+      border: 2px solid #ffd60a;
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 0 35px rgba(255, 214, 10, 0.45);
+    }
+    .star-rating {
+      font-size: 34px;
+      color: #ffd60a;
+      letter-spacing: 5px;
+    }
+    .stat-list {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 15px;
+      color: #d1b3ff;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 900;
+      color: #ff9e3b;
     }
 
     /* 終極開箱彈窗 */
@@ -310,17 +775,15 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.92);
       z-index: 4000;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 15px;
+      gap: 14px;
       text-align: center;
       padding: 20px;
     }
-    
-    /* 蓄力能量條 */
     #charge-bar-container {
       width: 80%;
       max-width: 380px;
@@ -329,23 +792,20 @@
       border: 2px solid #ff7b00;
       border-radius: 15px;
       overflow: hidden;
-      margin-bottom: 10px;
-      box-shadow: 0 0 15px rgba(255, 123, 0, 0.5);
+      margin-bottom: 8px;
     }
     #charge-bar-fill {
       width: 0%;
       height: 100%;
       background: linear-gradient(90deg, #ff7b00, #ff0055, #ffd60a);
-      transition: width 0.1s ease-out;
+      transition: width 0.08s ease-out;
     }
-
-    /* 禮物箱本體 */
     #box-wrapper {
       position: relative;
       display: inline-block;
     }
     #box-icon {
-      font-size: 110px;
+      font-size: 105px;
       cursor: pointer;
       display: inline-block;
       transition: transform 0.08s ease-out;
@@ -353,29 +813,22 @@
     }
     @keyframes boxIdle {
       0%, 100% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.05) rotate(3deg); }
+      50% { transform: scale(1.04) rotate(2deg); }
     }
-
-    .shaking {
-      animation: violentShake 0.1s infinite !important;
-    }
+    .shaking { animation: violentShake 0.1s infinite !important; }
     @keyframes violentShake {
-      0% { transform: translate(3px, 2px) rotate(2deg); }
-      25% { transform: translate(-3px, -2px) rotate(-2deg); }
-      50% { transform: translate(2px, -3px) rotate(3deg); }
-      75% { transform: translate(-2px, 3px) rotate(-3deg); }
-      100% { transform: translate(1px, -1px) rotate(1deg); }
+      0% { transform: translate(2px, 1px) rotate(1deg); }
+      50% { transform: translate(-2px, -1px) rotate(-1deg); }
+      100% { transform: translate(1px, -2px) rotate(1deg); }
     }
-
     #box-hint {
-      font-size: 24px;
+      font-size: 22px;
       color: #ffd60a;
       font-weight: bold;
-      text-shadow: 0 0 10px rgba(255, 214, 10, 0.6);
     }
     #restart-btn {
       display: none;
-      margin-top: 15px;
+      margin-top: 12px;
       padding: 14px 38px;
       font-size: 20px;
       font-weight: bold;
@@ -387,14 +840,14 @@
       z-index: 6000;
     }
 
-    /* 往上噴發後如花瓣般飄落特效容器 */
+    /* 糖果噴發容器 */
     .fountain-candy-node {
       position: fixed;
       z-index: 5500;
       pointer-events: none;
-      transition: transform var(--shoot-duration, 0.8s) cubic-bezier(0.1, 0.85, 0.25, 1);
+      will-change: transform, opacity;
+      transition: transform var(--shoot-duration, 0.7s) cubic-bezier(0.1, 0.85, 0.25, 1);
     }
-    
     .fountain-candy-inner {
       width: 100%;
       height: 100%;
@@ -403,42 +856,71 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.85));
     }
-
     .falling-sway {
-      animation: petalFall var(--fall-duration, 5s) linear forwards, petalSway var(--sway-duration, 2.5s) ease-in-out infinite alternate;
+      animation: petalFall var(--fall-duration, 4.5s) linear forwards, petalSway var(--sway-duration, 2.2s) ease-in-out infinite alternate;
     }
-
     @keyframes petalFall {
-      0% {
-        top: var(--peak-top);
-        opacity: 1;
-      }
-      85% {
-        opacity: 0.95;
-      }
-      100% {
-        top: 108vh;
-        opacity: 0;
-      }
+      0% { top: var(--peak-top); opacity: 1; }
+      85% { opacity: 0.9; }
+      100% { top: 106vh; opacity: 0; }
+    }
+    @keyframes petalSway {
+      0% { transform: translateX(calc(-1 * var(--sway-dist, 35px))) rotate(var(--rot-start, -15deg)); }
+      100% { transform: translateX(var(--sway-dist, 35px)) rotate(var(--rot-end, 360deg)); }
     }
 
-    @keyframes petalSway {
-      0% {
-        transform: translateX(calc(-1 * var(--sway-dist, 40px))) rotate(var(--rot-start, -20deg));
-      }
-      100% {
-        transform: translateX(var(--sway-dist, 40px)) rotate(var(--rot-end, 360deg));
-      }
+    /* 底部導讀快速對照列 */
+    #vocab-bar {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96%;
+      max-width: 860px;
+      display: none;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 6px 10px;
+      background: rgba(18, 9, 32, 0.94);
+      border-radius: 24px;
+      border: 2px solid #ffd166;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      scrollbar-width: none;
+    }
+    #vocab-bar::-webkit-scrollbar { display: none; }
+    .vocab-pill {
+      flex-shrink: 0;
+      background: #2b124c;
+      border: 1.5px solid #7b2cbf;
+      color: #ffd166;
+      padding: 6px 10px;
+      border-radius: 14px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .vocab-pill:active { transform: scale(0.95); }
+    .vocab-pill.active {
+      background: linear-gradient(135deg, #ff7b00, #ff0055) !important;
+      border-color: #ffd166 !important;
+      color: #fff !important;
+      box-shadow: 0 0 12px rgba(255, 123, 0, 0.8);
+      transform: scale(1.05);
     }
 
     #upload-container {
       position: fixed;
       bottom: 12px;
-      right: 15px;
-      z-index: 2000;
-      font-size: 12px;
+      right: 12px;
+      z-index: 1000;
+      font-size: 11px;
     }
     #upload-container input { display: none; }
     #upload-label {
@@ -446,24 +928,418 @@
       background: rgba(25, 15, 40, 0.9);
       color: #ffb703;
       padding: 5px 12px;
-      border-radius: 14px;
+      border-radius: 12px;
       border: 1px solid #ffb703;
     }
+
+    /* Part 2 全幅海報頂部句型看板 */
+    #p2-top-bar {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 95%;
+      max-width: 960px;
+      background: rgba(18, 9, 32, 0.94);
+      backdrop-filter: blur(10px);
+      border: 2px solid #06d6a0;
+      padding: 8px 18px;
+      border-radius: 40px;
+      box-shadow: 0 4px 22px rgba(6, 214, 160, 0.35);
+    }
+    .p2-sentence-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-grow: 1;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+    .p2-say-box {
+      cursor: pointer;
+      padding: 4px 12px;
+      border-radius: 14px;
+      transition: background 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+    .p2-say-box:active { transform: scale(0.97); background: rgba(255, 255, 255, 0.1); }
+    .p2-q-text {
+      font-size: 21px;
+      font-weight: 900;
+      color: #ffd166;
+    }
+    .p2-a-text {
+      font-size: 23px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .p2-a-target {
+      color: #06d6a0;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-shadow: 0 0 10px rgba(6, 214, 160, 0.6);
+      transition: color 0.2s ease;
+    }
+    .p2-ctrl-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #06d6a0;
+      color: #a0e8d0;
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .p2-ctrl-btn:active { transform: scale(0.95); background: #06d6a0; color: #03291e; }
+
+    /* Part 2 海報上的魔法巡航放大鏡 */
+    #p2-magnifier {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 4px solid #ffd166;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 214, 10, 0.15) 60%, rgba(18, 9, 32, 0.45) 100%);
+      box-shadow: 0 0 25px rgba(255, 209, 102, 0.8), inset 0 0 20px rgba(255, 209, 102, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 45;
+      cursor: pointer;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.2, 0.85, 0.25, 1), top 0.5s cubic-bezier(0.2, 0.85, 0.25, 1);
+      animation: magPulse 1.8s infinite alternate;
+    }
+    @keyframes magPulse {
+      0% { box-shadow: 0 0 18px rgba(255, 209, 102, 0.6), inset 0 0 15px rgba(255, 209, 102, 0.3); }
+      100% { box-shadow: 0 0 35px rgba(255, 209, 102, 0.95), inset 0 0 25px rgba(255, 209, 102, 0.5); }
+    }
+    .mag-glass-img {
+      width: 105px;
+      height: 105px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+      pointer-events: none;
+      transition: transform 0.2s ease;
+    }
+    .mag-handle {
+      position: absolute;
+      right: -24px;
+      bottom: -24px;
+      font-size: 38px;
+      pointer-events: none;
+      transform: rotate(35deg);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
+    }
+    .mag-badge {
+      position: absolute;
+      top: -12px;
+      background: linear-gradient(135deg, #ff7b00, #ff0055);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 3px 12px;
+      border-radius: 14px;
+      border: 1.5px solid #ffd166;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+
+
+    #lesson-plan-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 4500;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .lp-modal-card {
+      background: linear-gradient(145deg, #18092a, #0d0417);
+      border: 2.5px solid #06d6a0;
+      border-radius: 24px;
+      padding: 24px 28px;
+      max-width: 820px;
+      width: 96%;
+      max-height: 92vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(6, 214, 160, 0.4);
+      color: #fff;
+    }
+    .lp-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(6, 214, 160, 0.3);
+      padding-bottom: 12px;
+    }
+    .lp-modal-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #06d6a0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .lp-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .lp-field.full {
+      grid-column: span 2;
+    }
+    .lp-label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffd166;
+    }
+    .lp-input, .lp-textarea {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid #7b2cbf;
+      border-radius: 12px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    .lp-input:focus, .lp-textarea:focus {
+      border-color: #06d6a0;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .lp-textarea {
+      min-height: 75px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    .lp-btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+
+    /* 教師手冊按鈕與頂部按鈕列 */
+    #top-action-bar {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 2200;
+      display: flex;
+      gap: 10px;
+    }
+    .top-action-btn {
+      background: rgba(18, 9, 32, 0.92);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+    .top-action-btn:active { transform: scale(0.96); }
+    #btn-open-guide {
+      border: 2px solid #ffd166;
+      color: #ffd166;
+      box-shadow: 0 4px 15px rgba(255, 209, 102, 0.35);
+    }
+    #btn-open-guide:hover {
+      background: #ffd166;
+      color: #1a0b2e;
+      transform: scale(1.03);
+    }
+    #btn-open-plan {
+      border: 2px solid #06d6a0;
+      color: #a0e8d0;
+      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.35);
+    }
+    #btn-open-plan:hover {
+      background: #06d6a0;
+      color: #03291e;
+      transform: scale(1.03);
+    }
+
+    /* 教師教學手冊彈窗 */
+    #guide-modal, #story-intro-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 4600;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .guide-modal-card {
+      background: linear-gradient(145deg, #1b0a30, #0a0314);
+      border: 2.5px solid #ffd166;
+      border-radius: 26px;
+      padding: 24px 28px;
+      max-width: 860px;
+      width: 96%;
+      max-height: 92vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(255, 209, 102, 0.45);
+      color: #fff;
+    }
+    .guide-nav-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid rgba(255, 209, 102, 0.25);
+      padding-bottom: 8px;
+    }
+    .guide-tab-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 209, 102, 0.4);
+      color: #d8b4e2;
+      padding: 8px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .guide-tab-btn.active {
+      background: #ffd166;
+      color: #1a0b2e;
+      border-color: #ffd166;
+      box-shadow: 0 2px 10px rgba(255, 209, 102, 0.5);
+    }
+    .guide-tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .guide-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid #ffd166;
+      border-radius: 0 14px 14px 0;
+      padding: 12px 16px;
+    }
+    .guide-box-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffd166;
+      margin-bottom: 6px;
+    }
+
+    /* Part 3 遊戲規則情境卡彈窗 */
+    .story-modal-card {
+      background: linear-gradient(145deg, #240a3e, #0c0217);
+      border: 3px solid #ff7b00;
+      border-radius: 26px;
+      padding: 24px 28px;
+      max-width: 800px;
+      width: 95%;
+      max-height: 92vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(255, 123, 0, 0.5);
+      color: #fff;
+      animation: popIn 0.25s ease-out;
+    }
+    .story-hero-banner {
+      background: radial-gradient(circle, rgba(255, 123, 0, 0.25) 0%, rgba(0, 0, 0, 0.4) 100%);
+      border: 1.5px dashed #ff9e3b;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .story-rules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .rule-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid #7b2cbf;
+      border-radius: 16px;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      text-align: center;
+    }
+    .rule-icon { font-size: 32px; }
+    .rule-title { font-size: 15px; font-weight: 900; color: #ffd166; }
+    .rule-desc { font-size: 13px; color: #d8b4e2; line-height: 1.4; }
+
   </style>
 </head>
 <body>
 
-  <!-- 頂部遊戲狀態列 -->
+  <button id="return-home-btn" onclick="returnToPreview()">🏠 首頁選單</button>
+
+  <div id="timer-bar-container">
+    <div id="timer-bar-fill"></div>
+  </div>
+
+  
+  <!-- Part 2 全幅海報頂部句型看板 (Q&A 雙語調、切換鍵) -->
+  <div id="p2-top-bar">
+    <button class="p2-ctrl-btn" onclick="prevDrillCard()">⬅ Prev</button>
+    <div class="p2-sentence-group">
+      <div class="p2-say-box" onclick="speak('What do you see?')" title="點擊聽問句">
+        <span class="p2-q-text">Q: What do you see?</span>
+      </div>
+      <div class="p2-say-box" onclick="speakCurrentDrillSentence()" title="點擊聽回答">
+        <span class="p2-a-text">A: I see a <span class="p2-a-target" id="p2-sentence-target">bat</span>!</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button class="p2-ctrl-btn" style="background:#06d6a0; color:#03291e;" onclick="nextDrillCard()">⚡ Next ➡</button>
+      <button class="p2-ctrl-btn" onclick="randomDrillCard()">🎲 Random</button>
+    </div>
+  </div>
+
   <div id="header-bar">
-    <button id="speech-btn" onclick="speakCurrentTarget()">🔊 聽題目</button>
-    <button id="bgm-toggle-btn" onclick="toggleBGM()">🎵 音樂: 開</button>
+    <button class="header-btn" id="speech-btn" onclick="speakCurrentTarget()">🔊 題目</button>
+    <button class="header-btn" id="hint-btn" onclick="triggerManualHint()">💡 提示</button>
+    <button class="header-btn" id="bgm-toggle-btn" onclick="toggleBGM()">🎵 音樂: 開</button>
     <div id="task-text">準備進入鬼屋...</div>
     <div id="candy-counter">🍬 <span id="found-count">0</span> / 8</div>
   </div>
 
-  <div id="guide-pill">🖐️ 上下左右滑動探索鬼屋，注意聽嗶嗶雷達聲！</div>
+  <div id="hint-pill">💡 線索提示載入中...</div>
+  <div id="guide-pill">🖐 滑動探索鬼屋，注意聽嗶嗶雷達聲！</div>
+  <div id="vocab-bar"></div>
 
-  <!-- 遊戲視窗 -->
+  <!-- 視窗容器 -->
   <div id="viewport">
     <div id="world">
       <img id="poster-img" src="poster.jpg" alt="萬聖節海報底圖" onerror="this.src='https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80'">
@@ -472,40 +1348,395 @@
       <div id="dark-overlay"></div>
 
       <!-- 8 大角色目標熱區 -->
-      <div class="target-box" id="box-bat" style="left: 5%; top: 22.5%; width: 22%; height: 8%;" data-word="bat"></div>
-      <div class="target-box" id="box-spider" style="left: 23%; top: 21.5%; width: 15%; height: 13%;" data-word="spider"></div>
-      <div class="target-box" id="box-vampire" style="left: 10%; top: 37%; width: 34%; height: 17%;" data-word="vampire"></div>
-      <div class="target-box" id="box-ghost" style="left: 45%; top: 41.5%; width: 19%; height: 13%;" data-word="ghost"></div>
-      <div class="target-box" id="box-mummy" style="left: 63%; top: 46%; width: 20%; height: 11%;" data-word="mummy"></div>
-      <div class="target-box" id="box-witch" style="left: 61%; top: 65%; width: 21%; height: 14%;" data-word="witch"></div>
-      <div class="target-box" id="box-jack-o-lantern" style="left: 29%; top: 73.5%; width: 21%; height: 10%;" data-word="jack-o'-lantern"></div>
-      <div class="target-box" id="box-pumpkin" style="left: 76%; top: 72.5%; width: 22%; height: 12%;" data-word="pumpkin"></div>
+      <div class="target-box" id="box-bat" style="left: 5%; top: 22.5%; width: 22%; height: 8%;" data-word="bat">
+        <span class="explore-badge">❶</span>
+      </div>
+      <div class="target-box" id="box-spider" style="left: 23%; top: 21.5%; width: 15%; height: 13%;" data-word="spider">
+        <span class="explore-badge">❷</span>
+      </div>
+      <div class="target-box" id="box-vampire" style="left: 10%; top: 37%; width: 34%; height: 17%;" data-word="vampire">
+        <span class="explore-badge">❸</span>
+      </div>
+      <div class="target-box" id="box-ghost" style="left: 45%; top: 41.5%; width: 19%; height: 13%;" data-word="ghost">
+        <span class="explore-badge">❹</span>
+      </div>
+      <div class="target-box" id="box-mummy" style="left: 63%; top: 46%; width: 20%; height: 11%;" data-word="mummy">
+        <span class="explore-badge">❺</span>
+      </div>
+      <div class="target-box" id="box-witch" style="left: 61%; top: 65%; width: 21%; height: 14%;" data-word="witch">
+        <span class="explore-badge">❻</span>
+      </div>
+      <div class="target-box" id="box-jack-o-lantern" style="left: 29%; top: 73.5%; width: 21%; height: 10%;" data-word="jack-o'-lantern">
+        <span class="explore-badge">❼</span>
+      </div>
+      <div class="target-box" id="box-pumpkin" style="left: 76%; top: 72.5%; width: 22%; height: 12%;" data-word="pumpkin">
+        <span class="explore-badge">❽</span>
+      </div>
 
       <!-- 隱藏彩蛋 -->
       <div class="easter-egg" id="egg-tiger" style="left: 41%; top: 20%; width: 18%; height: 7%;" title="屋頂老虎"></div>
       <div class="easter-egg" id="egg-genie" style="left: 22%; top: 58%; width: 15%; height: 8%;" title="神燈精靈"></div>
       <div class="easter-egg" id="egg-sign" style="left: 78%; top: 68%; width: 18%; height: 6%;" title="路牌"></div>
 
-      <!-- 魔法星星道具 -->
-      <div id="magic-star" title="點擊獲得超級探照燈！">⭐</div>
+      
+      <!-- Part 2 魔法巡航放大鏡 -->
+      <div id="p2-magnifier" onclick="speakCurrentDrillSentence()" title="點擊聽句子">
+        <span class="mag-badge" id="mag-badge-text">bat</span>
+        <img class="mag-glass-img" id="mag-glass-img" src="bat.png" alt="magnifier" onerror="this.style.display='none';">
+        <span class="mag-handle">🔍</span>
+      </div>
+
+      <!-- 魔法星星 -->
+      <div id="magic-star" title="超級探照燈">⭐</div>
     </div>
   </div>
 
-  <!-- 開場全貌預覽畫面 + 開始按鈕 -->
+  <!-- 開場主選單 (Part 1, Part 2, Challenge) -->
+  
+  <!-- 課程簡案產生器按鈕 (常駐右上角) -->
+  
+  <!-- 頂部功能工具列 (教師指引 ＋ 課程簡案) -->
+  <div id="top-action-bar">
+    <button class="top-action-btn" id="btn-open-guide" onclick="openTeacherGuideModal()">📖 教師教學手冊</button>
+    <button class="top-action-btn" id="btn-open-plan" onclick="openLessonPlanModal()">📝 匯出課程簡案 (.doc)</button>
+  </div>
+
+  <!-- 教師教學手冊彈窗 (Teacher's Guide) -->
+  <div id="guide-modal">
+    <div class="guide-modal-card">
+      <div class="lp-modal-header">
+        <div class="lp-modal-title" style="color:#ffd166;">📖 教師教學指引與課堂手冊 (Teacher's Guide)</div>
+        <button class="fc-close" onclick="closeTeacherGuideModal()">✕</button>
+      </div>
+
+      <!-- 頁籤導覽列 -->
+      <div class="guide-nav-tabs">
+        <button class="guide-tab-btn active" id="tab-btn-time" onclick="switchGuideTab('time')">⏱ 20 vs 40 分鐘配時</button>
+        <button class="guide-tab-btn" id="tab-btn-skills" onclick="switchGuideTab('skills')">🎯 三大單元操作心法</button>
+        <button class="guide-tab-btn" id="tab-btn-tech" onclick="switchGuideTab('tech')">🖥 大螢幕與白板建議</button>
+      </div>
+
+      <!-- 頁籤 1: 課堂時間分配 -->
+      <div class="guide-tab-content" id="tab-content-time">
+        <div class="guide-box">
+          <div class="guide-box-title">⚡ 20 分鐘快速課堂模式（晨光時間 / 跨班節慶快閃 / 段考週趕課）</div>
+          <p>• <strong>0~5 分 (單字與發音)</strong>：進入 <strong>Part 1</strong>，點擊大字卡依序帶念 8 個核心怪物單字與 Phonics 自然發音拼讀。</p>
+          <p>• <strong>5~12 分 (句型問答)</strong>：進入 <strong>Part 2</strong>，由放大鏡引導「What do you see?」，抽問學生回答「I see a...」。</p>
+          <p>• <strong>12~18 分 (尋寶闖關)</strong>：進入 <strong>Challenge</strong> 選擇「模式 A：聽力挑戰」，全班合作聽音找出 8 隻怪物。</p>
+          <p>• <strong>18~20 分 (開箱慶祝)</strong>：合力狂點魔法禮物箱，啟動糖果火山大噴發，歡呼 Trick or Treat 下課！</p>
+        </div>
+
+        <div class="guide-box" style="border-left-color: #06d6a0;">
+          <div class="guide-box-title" style="color: #06d6a0;">📚 40 分鐘完整標準課堂（正規雙語/英語科任課堂）</div>
+          <p>• <strong>0~5 分 (Warm-up 暖身)</strong>：展示全幅海報，點擊屋頂老虎、神燈精靈、萬聖路牌等彩蛋聆聽趣味音效。</p>
+          <p>• <strong>5~15 分 (Part 1 Words)</strong>：單字特寫導讀 ＋ Phonics 音素拼讀 ＋ 抽點學生上台進行「3選1 看圖快選」。</p>
+          <p>• <strong>15~25 分 (Part 2 Sentences)</strong>：利用全幅海報「魔法巡航放大鏡」進行句型替換 Call & Response（分組男女生對答）。</p>
+          <p>• <strong>25~35 分 (Challenge Assessment)</strong>：全班分兩隊對抗，挑戰「模式 C：60秒限時競速」，評量聽音與認讀成效。</p>
+          <p>• <strong>35~40 分 (Wrap-up 成果結算)</strong>：星級榜結算、狂點禮物箱噴發 50 顆糖果火山，並抽問 2 題通關密碼下課。</p>
+        </div>
+      </div>
+
+      <!-- 頁籤 2: 教學操作心法 -->
+      <div class="guide-tab-content" id="tab-content-skills" style="display: none;">
+        <div class="guide-box">
+          <div class="guide-box-title">📖 Part 1：單字圖鑑王 (純英文輸入無干擾)</div>
+          <p>• <strong>無中文干擾</strong>：刻意去除所有中文註釋，讓中低年級孩子直接建立「高解析插圖 ➔ 英文拼字 ➔ 標準發音」的直覺連結。</p>
+          <p>• <strong>Phonics 拼讀鷹架</strong>：點擊發音卡片，引導學生大聲朗讀首音（如：/w/ - /w/ - witch）。</p>
+        </div>
+        <div class="guide-box" style="border-left-color: #06d6a0;">
+          <div class="guide-box-title" style="color: #06d6a0;">💬 Part 2：句子教學 (先提問、留白給學生輸出)</div>
+          <p>• <strong>純問句提問設計</strong>：按下 Next/Prev 或底部單字時，系統只會播放「What do you see?」，切勿自問自答！請務必將開口回答的機會留給台下學生。</p>
+          <p>• <strong>答案核對手部點擊</strong>：若學生卡住或需要示範，教師直接手點放大鏡或頂部綠色答句，才會播放「I see a [target]!」核對。</p>
+        </div>
+        <div class="guide-box" style="border-left-color: #ff7b00;">
+          <div class="guide-box-title" style="color: #ff7b00;">🎃 Challenge：探照燈尋寶遊戲 (三層級分組評量)</div>
+          <p>• <strong>低年級首選「模式 A (聽力挑戰)」</strong>：遮蔽單字文字，純粹鍛鍊耳朵敏銳度，尋找海報目標。</p>
+          <p>• <strong>中年級首選「模式 B (認讀挑戰)」</strong>：顯示拼音單字不發音，加強字母認讀拼讀能力。</p>
+          <p>• <strong>課堂高潮首選「模式 C (60s 競速)」</strong>：計時條快速縮短，緊張刺激，分組 PK 氣氛最熱烈！</p>
+        </div>
+      </div>
+
+      <!-- 頁籤 3: 硬體與操作建議 -->
+      <div class="guide-tab-content" id="tab-content-tech" style="display: none;">
+        <div class="guide-box">
+          <div class="guide-box-title">🖥 大螢幕與電子白板建議</div>
+          <p>• <strong>瀏覽器全螢幕模式</strong>：在電子白板或大觸控屏上，建議按下 <strong>F11</strong> 進入全螢幕，獲得最佳沉浸體驗。</p>
+          <p>• <strong>觸控白板手勢</strong>：探照燈支援多點觸控滑動拖曳，學生可直接用手指或白板筆在海報上滑動尋寶。</p>
+          <p>• <strong>外接喇叭</strong>：本程式內建生動的雷達近距離 Sonar 嗶嗶聲、停電音效與萬聖節配樂，建議開啟外接音響以達最佳臨場感。</p>
+          <p>• <strong>自訂海報底圖</strong>：右下角「🖼️ 載入海報」支援更換為老師自己的節慶活動海報或教材圖片。</p>
+        </div>
+      </div>
+
+      <div class="lp-btn-row">
+        <button class="header-btn" style="background: #ffd166; color: #1a0b2e; font-size: 15px;" onclick="closeTeacherGuideModal()">我了解了，返回首頁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Part 3 遊戲規則情境解說彈窗 (Story Intro Modal) -->
+  <div id="story-intro-modal">
+    <div class="story-modal-card">
+      <div class="lp-modal-header" style="border-bottom-color: rgba(255, 123, 0, 0.4);">
+        <div class="lp-modal-title" style="color:#ff9e3b;">🎃 任務簡報：南瓜小鎮的停電驚魂夜</div>
+        <button class="fc-close" onclick="closeStoryIntroModal()">✕</button>
+      </div>
+
+      <!-- 故事背景 Banner -->
+      <div class="story-hero-banner">
+        <span style="font-size: 54px;">⚡</span>
+        <div>
+          <div style="font-size: 18px; font-weight: 900; color: #ffd166; margin-bottom: 4px;">萬聖特工集結！奪回被偷走的魔法糖果！</div>
+          <p style="font-size: 14px; color: #eee; line-height: 1.5;">
+            萬聖節夜晚，神祕的鬼屋突然大跳電！8 隻調皮的萬聖節小怪物趁黑把小鎮所有的魔法糖果藏在鬼屋各個角落。請拿起你的「微光探照燈」，深入漆黑鬼屋聽音辨位，找回所有糖果解開終極封印！
+          </p>
+        </div>
+      </div>
+
+      <!-- 3大遊戲規則與道具說明 -->
+      <div class="story-rules-grid">
+        <div class="rule-card">
+          <div class="rule-icon">🎧</div>
+          <div class="rule-title">規則一：聽音辨位</div>
+          <div class="rule-desc">仔細聽廣播指令（Where is the mummy?），滑動探照燈鎖定目標！</div>
+        </div>
+        <div class="rule-card" style="border-color: #06d6a0;">
+          <div class="rule-icon">📡</div>
+          <div class="rule-title" style="color: #06d6a0;">規則二：雷達聲納</div>
+          <div class="rule-desc">光圈越靠近怪物，嗶嗶聲會越急促！注意聆聽聲音導引！</div>
+        </div>
+        <div class="rule-card" style="border-color: #ffd166;">
+          <div class="rule-icon">⭐</div>
+          <div class="rule-title" style="color: #ffd166;">規則三：魔法星星</div>
+          <div class="rule-desc">尋寶時看見閃爍的黃金魔法星星，點擊可瞬間擴大探照燈光圈 6 秒！</div>
+        </div>
+      </div>
+
+      <div class="guide-box" style="border-left-color: #ff0055; background: rgba(255, 0, 85, 0.08);">
+        <div class="guide-box-title" style="color: #ff65a3;">🎁 終極慶典目標：點燃糖果火山！</div>
+        <p style="font-size: 14px; color: #eee;">
+          收集完 8 顆糖果後，全班合力狂點魔法禮物箱蓄力充能，即可觸發 <strong>50 顆萬聖節糖果火山大噴發</strong>慶祝任務成功！
+        </p>
+      </div>
+
+      <div class="lp-btn-row" style="justify-content: space-between; align-items: center;">
+        <button class="header-btn" style="background: rgba(255,255,255,0.1); border: 1.5px solid #888;" onclick="closeStoryIntroModal()">稍後再挑戰</button>
+        <button class="header-btn" style="background: linear-gradient(135deg, #ff7b00, #ff0055); color: #fff; font-size: 17px; padding: 12px 28px; box-shadow: 0 0 20px rgba(255, 123, 0, 0.6);" onclick="proceedToModeSelect()">
+          🚀 接受特工任務！選擇難度 ➡
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 課程簡案填寫與匯出彈窗 -->
+  <div id="lesson-plan-modal">
+    <div class="lp-modal-card">
+      <div class="lp-modal-header">
+        <div class="lp-modal-title">📝 雙語課程簡案產生器 (學校規格)</div>
+        <button class="fc-close" onclick="closeLessonPlanModal()">✕</button>
+      </div>
+
+      <div class="lp-grid">
+        <div class="lp-field">
+          <label class="lp-label">學校名稱</label>
+          <input type="text" class="lp-input" id="lp-school" value="鹿港鎮頂番國小">
+        </div>
+        <div class="lp-field">
+          <label class="lp-label">授課教師</label>
+          <input type="text" class="lp-input" id="lp-teacher" value="Louis">
+        </div>
+
+        <div class="lp-field">
+          <label class="lp-label">實施班級</label>
+          <input type="text" class="lp-input" id="lp-class" value="四年甲班">
+        </div>
+        <div class="lp-field">
+          <label class="lp-label">學生數</label>
+          <input type="text" class="lp-input" id="lp-students" value="26">
+        </div>
+
+        <div class="lp-field">
+          <label class="lp-label">領域學科</label>
+          <input type="text" class="lp-input" id="lp-subject" value="英語文 / 雙語節慶教學">
+        </div>
+        <div class="lp-field">
+          <label class="lp-label">教材來源</label>
+          <input type="text" class="lp-input" id="lp-source" value="自編教材 (Happy Halloween 萬聖節鬼屋冒險)">
+        </div>
+
+        <div class="lp-field">
+          <label class="lp-label">主題或專題名稱</label>
+          <input type="text" class="lp-input" id="lp-theme" value="Unit: Happy Halloween! 萬聖節鬼屋冒險">
+        </div>
+        <div class="lp-field">
+          <label class="lp-label">教學日期</label>
+          <input type="text" class="lp-input" id="lp-date" value="2026-10-06">
+        </div>
+
+        <div class="lp-field full">
+          <label class="lp-label">教學節次</label>
+          <input type="text" class="lp-input" id="lp-period" value="共二節，本次教學為第一、二節">
+        </div>
+
+        <div class="lp-field full">
+          <label class="lp-label">學科內容目標</label>
+          <textarea class="lp-textarea" id="lp-content-goal">一、能認識萬聖節西洋文化應景代表角色與物品（蝙蝠、蜘蛛、吸血鬼、幽靈、木乃伊、女巫、南瓜燈、南瓜）。
+二、能透過全幅海報情境觀察各樓層場景細節，提升視覺觀察力與文化理解力。</textarea>
+        </div>
+
+        <div class="lp-field full">
+          <label class="lp-label">溝通 / 語言目標</label>
+          <textarea class="lp-textarea" id="lp-lang-goal">一、學生能聽懂並讀出 8 個萬聖節核心單字與自然發音：
+    第一節目標單字：bat、spider、vampire、ghost、mummy、witch、jack-o'-lantern、pumpkin。
+    自然發音音素：/b/ - bat, /sp/ - spider, /v/ - vampire, /g/ - ghost, /m/ - mummy, /w/ - witch, /dʒ/ - jack-o'-lantern, /p/ - pumpkin。
+二、學生能聽懂簡易問句：
+    What do you see?
+三、學生能使用目標句型回應與描述：
+    I see a (bat / spider / vampire / ghost / mummy / witch / jack-o'-lantern / pumpkin)!</textarea>
+        </div>
+
+        <div class="lp-field full">
+          <label class="lp-label">第一節教學流程 (單字與自然發音 Words & Phonics)</label>
+          <textarea class="lp-textarea" id="lp-flow-1">【引起動機】10' 活動名稱：鬼屋彩蛋大探險 (Warm-up & Eggs)
+一、教師出示大螢幕萬聖節鬼屋全景海報，引導學生尋找隱藏彩蛋（老虎、神燈精靈、萬聖路牌）並聆聽音效，喚醒萬聖節背景知識。
+
+【發展活動】25' 活動名稱：Part 1 單字圖鑑與自然發音 (Words & Phonics)
+一、教師運用大螢幕字卡，特寫呈現 8 大角色插圖，帶讀單字發音（純英文無中文干擾）。
+二、音素覺察與拼讀：點擊 Phonics 規則條，引導學生跟讀首音與單字拼讀（如 /b/ - /b/ - bat）。
+三、小試身手看圖選題：進行 3 選 1 圖片辨音快選，學生聽音指出正確圖片，提供即時正向回饋。
+
+【綜合活動】5' 活動名稱：單字大點名
+一、教師運用底部快速導讀列，隨機抽點角色，全班齊聲唸出正確單字與首音。
+二、總結第一節學習成果，預告下節課進行句型問答與尋寶挑戰。
+~~~~第一節結束~~~~</textarea>
+        </div>
+
+        <div class="lp-field full">
+          <label class="lp-label">第二節教學流程 (句型替換與探照燈挑戰 Sentences & Assessment)</label>
+          <textarea class="lp-textarea" id="lp-flow-2">【引起動機】5' 活動名稱：舊經驗喚醒 (Review)
+一、快速複習第一節 8 個核心怪物單字。
+二、教師帶出核心問句：「What do you see?」引導學生注意全幅海報。
+
+【發展活動】25' 活動名稱：Part 2 全海報放大鏡句型巡航 ＋ Part 3 探照燈尋寶
+一、全幅海報巡航練習 (Substitution Drill)：
+    1. 教師點擊 Next/Prev，金色魔法放大鏡巡航滑動鎖定海報目標。
+    2. 系統提出問句：「What do you see?」，學生看著放大鏡開口回答完整答句：「I see a [target]!」。
+    3. 進行分組對抗輪流問答（男生組問、女生組答）。
+二、Challenge 鬼屋探照燈尋寶挑戰：
+    1. 啟動關燈停電倒數（3-2-1 GO），全班進入夜間探照燈尋寶模式。
+    2. 依班級程度選擇模式 A（聽力挑戰）或模式 C（60 秒限時競速），利用雷達嗶嗶聲合作尋寶收集 8 顆糖果。
+
+【綜合活動】10' 活動名稱：星級榜結算與魔法開箱慶典
+一、檢視任務成果統計（耗時、命中率、星級評等）。
+二、全班齊喊「Trick or Treat!」，合力連點魔法禮物箱，啟動 50 顆糖果火山大噴發！
+三、總結回饋與收心下課。
+~~~~第二節結束~~~~</textarea>
+        </div>
+      </div>
+
+      <div class="lp-btn-row">
+        <button class="header-btn" style="background: rgba(255,255,255,0.1); border: 1.5px solid #888;" onclick="closeLessonPlanModal()">取消</button>
+        <button class="header-btn" style="background: linear-gradient(135deg, #06d6a0, #058c68); color: #02291d; font-size: 16px; padding: 10px 22px;" onclick="downloadLessonPlanDoc()">📥 下載 Word 簡案 (.doc)</button>
+      </div>
+    </div>
+  </div>
+
   <div id="start-screen">
-    <button id="start-btn" onclick="startPowerOutageSequence()">🎃 開始萬聖節尋寶</button>
+    <div class="start-btn-group">
+      <button class="menu-main-btn" id="btn-mode-part1" onclick="enterPart1Mode()">📖 Part 1：單字教學 (Words & Phonics)</button>
+      <button class="menu-main-btn" id="btn-mode-part2" onclick="enterPart2Mode()">💬 Part 2：句子教學 (Sentence Substitution)</button>
+      <button class="menu-main-btn" id="btn-mode-game" onclick="openStoryIntroModal()">🎃 Challenge：鬼屋探照燈尋寶挑戰</button>
+    </div>
+  </div>
+
+  <!-- 難度選擇彈窗 -->
+  <div id="mode-modal">
+    <div class="modal-card">
+      <div class="modal-title">請選擇尋寶挑戰難度</div>
+      <div class="mode-select-btn" onclick="confirmStartGame('listening')">
+        <div class="mode-btn-title">🎧 模式 A：聽力挑戰 (Listening)</div>
+        <div class="mode-btn-desc">題目文字遮蔽，只播語音，訓練聽音辨圖！</div>
+      </div>
+      <div class="mode-select-btn" onclick="confirmStartGame('reading')">
+        <div class="mode-btn-title">🔤 模式 B：認讀拼讀 (Reading)</div>
+        <div class="mode-btn-desc">顯示英文單字，不主動發音，練習字母認讀！</div>
+      </div>
+      <div class="mode-select-btn" onclick="confirmStartGame('timed')">
+        <div class="mode-btn-title">⚡ 模式 C：限時競速 (60s Attack)</div>
+        <div class="mode-btn-desc">60 秒倒數計時挑戰，最適合課堂分組競賽！</div>
+      </div>
+      <button class="header-btn" style="align-self: center; margin-top: 6px;" onclick="closeModeSelectModal()">取消</button>
+    </div>
   </div>
 
   <!-- 停電倒數層 -->
   <div id="countdown-overlay">
-    <div id="countdown-tip">⚠️ 電力中斷！探照燈即將啟動...</div>
+    <div id="countdown-tip">⚠️ 電力中斷！探照燈啟動...</div>
     <div id="countdown-number">3</div>
   </div>
 
-  <!-- 終極開箱儀式彈窗 -->
+  <!-- ==============================================
+       Part 1：單字大卡片彈窗 (大圖、大單字、Phonics、3選1)
+       ============================================== -->
+  <div id="flashcard-modal">
+    <div class="flashcard-box">
+      <div class="fc-header-simple">
+        <div class="fc-unit-tag">PART 1：WORDS & PHONICS</div>
+        <button class="fc-close" onclick="closeFlashcard()">✕</button>
+      </div>
+
+      <!-- 角色大特寫與超大單字 (純英文) -->
+      <div class="fc-hero-row">
+        <img id="fc-avatar-img" class="fc-avatar-big" src="" alt="avatar" onerror="this.style.display='none'">
+        <div class="fc-hero-title-box" onclick="speakSingleWord()" title="點擊發音">
+          <div class="fc-title-word" id="fc-word">bat</div>
+          <div class="fc-click-hint">🔊 Tap word to listen</div>
+        </div>
+      </div>
+
+      <!-- 自然發音規則 (點擊卡片發音) -->
+      <div class="fc-clickable-card" onclick="speakPhonics()" title="點擊聽發音規則">
+        <div class="fc-label">Phonics</div>
+        <div class="fc-content-big" id="fc-phonics">/b/ - /b/ - bat</div>
+        <div class="fc-tap-badge">🔊 Tap to repeat</div>
+      </div>
+
+      <!-- 看圖選題按鈕 -->
+      <button class="header-btn" style="background: linear-gradient(135deg, #06d6a0, #058c68); color:#03291e; font-size:18px; padding:12px; justify-content:center;" onclick="toggleQuickQuiz()">
+        ⚡ 小試身手：看圖選題挑戰
+      </button>
+
+      <!-- 3選1看圖選題區 -->
+      <div id="quick-quiz-area">
+        <div style="font-size: 15px; color: #a0e8d0; font-weight: bold;">請聽語音，點選正確的圖片：</div>
+        <div class="quiz-options-grid" id="quiz-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       Part 2：句子教學大彈窗 (範例示範 + 閃視卡替換練習)
+       ============================================== -->
+  <!-- Part 2 全幅海報放大鏡情境教學 -->
+  <!-- 成果結算畫面 -->
+  <div id="victory-modal">
+    <div class="victory-card">
+      <h2 style="color: #ffd60a; font-size: 26px;">🎉 MISSION COMPLETED!</h2>
+      <div class="star-rating" id="victory-stars">⭐⭐⭐</div>
+      <div class="stat-list">
+        <div>耗時<br><span class="stat-val" id="stat-time">25s</span></div>
+        <div>準確率<br><span class="stat-val" id="stat-accuracy">100%</span></div>
+        <div>收集糖果<br><span class="stat-val" id="stat-candies">8 / 8</span></div>
+      </div>
+      <p id="victory-comment" style="color: #eee; font-size: 15px;">太棒了！你是萬聖節鬼屋尋寶大師！</p>
+      <button class="menu-main-btn" style="background: linear-gradient(135deg, #ff7b00, #ff0055);" onclick="goToCandyBoxFromVictory()">🎁 前往魔法禮物箱開箱！</button>
+    </div>
+  </div>
+
+  <!-- 終極開箱彈窗 -->
   <div id="mystery-box-modal">
-    <h1 style="color: #ff9e3b; font-size: 38px;">🎁 Find Candy! 魔法開箱！</h1>
-    <p style="color: #eee; font-size: 19px;">大家一起快速連續狂點禮物箱充能！</p>
+    <h1 style="color: #ff9e3b; font-size: 34px;">🎁 Find Candy! 魔法開箱！</h1>
+    <p style="color: #eee; font-size: 17px;">快速連續狂點禮物箱充能！</p>
     
     <div id="charge-bar-container">
       <div id="charge-bar-fill"></div>
@@ -520,52 +1751,43 @@
   </div>
 
   <div id="upload-container">
-    <label id="upload-label" for="img-uploader">🖼️ 載入海報圖檔</label>
+    <label id="upload-label" for="img-uploader">🖼️ 載入海報</label>
     <input type="file" id="img-uploader" accept="image/*" onchange="loadUserPoster(event)">
   </div>
 
   <script>
-    // 38 款萬聖節糖果圖檔清單
     const CANDY_IMAGES = Array.from({ length: 38 }, (_, i) => {
       const num = String(i + 1).padStart(2, '0');
       return `萬聖節-icon_${num}.png`;
     });
 
-    // 8大角色與專屬音效配對
+    // 8 大單字教學資料庫 (以真實檔案總管檔名為準)
     const VOCABULARY = [
-      { word: 'bat', elId: 'box-bat', sfx: 'sfx_bat.mp3' },
-      { word: 'spider', elId: 'box-spider', sfx: 'sfx_spider.mp3' },
-      { word: 'vampire', elId: 'box-vampire', sfx: 'sfx_vampire.mp3' },
-      { word: 'ghost', elId: 'box-ghost', sfx: 'sfx_ghost.mp3' },
-      { word: 'mummy', elId: 'box-mummy', sfx: 'sfx_mummy.mp3' },
-      { word: 'witch', elId: 'box-witch', sfx: 'sfx_witch.mp3' },
-      { word: "jack-o'-lantern", elId: 'box-jack-o-lantern', sfx: 'sfx_jackolantern.mp3' },
-      { word: 'pumpkin', elId: 'box-pumpkin', sfx: 'sfx_pumpkin.mp3' }
+      { id: 1, word: 'bat', imgSrc: 'bat.png', elId: 'box-bat', sfx: 'sfx_bat.mp3', phonics: '/b/ - /b/ - bat', hint: '黑漆漆飛在屋頂天花板的小動物！' },
+      { id: 2, word: 'spider', imgSrc: 'spider.png', elId: 'box-spider', sfx: 'sfx_spider.mp3', phonics: '/sp/ - /sp/ - spider', hint: '找找看掛在大蜘蛛網上的多腳小傢伙！' },
+      { id: 3, word: 'vampire', imgSrc: 'vampire.png', elId: 'box-vampire', sfx: 'sfx_vampire.mp3', phonics: '/v/ - /v/ - vampire', hint: '有著紅色內裡披風與尖牙齒的綠臉伯爵！' },
+      { id: 4, word: 'ghost', imgSrc: 'ghost.png', elId: 'box-ghost', sfx: 'sfx_ghost.mp3', phonics: '/g/ - /g/ - ghost', hint: '閣樓圓形窗戶飄出來的白白幽靈！' },
+      { id: 5, word: 'mummy', imgSrc: 'mummy.png', elId: 'box-mummy', sfx: 'sfx_mummy.mp3', phonics: '/m/ - /m/ - mummy', hint: '全身纏滿白色繃帶、在右邊二樓窗台向你招手！' },
+      { id: 6, word: 'witch', imgSrc: 'witch.png', elId: 'box-witch', sfx: 'sfx_witch.mp3', phonics: '/w/ - /w/ - witch', hint: '戴著尖尖巫師帽、在一樓門口拿著掃帚！' },
+      { id: 7, word: "jack-o'-lantern", imgSrc: "jack_o_lantern.png", elId: "box-jack-o-lantern", sfx: "sfx_jackolantern.mp3", phonics: "/dʒ/ - jack-o'-lantern", hint: "被小朋友抱著、會發光的萬聖節雕刻南瓜！" },
+      { id: 8, word: 'pumpkin', imgSrc: 'pumpkin.png', elId: 'box-pumpkin', sfx: 'sfx_pumpkin.mp3', phonics: '/p/ - /p/ - pumpkin', hint: '堆在右下角地上的金黃色大南瓜堆！' }
     ];
 
-    // ==========================================
-    // 🎵 音效管理器（Sound Manager）
-    // ==========================================
     const SOUNDS = {
-      // BGM
       bgm: new Audio('bgm_spooky_fun.mp3'),
-      // 開場與過場
       btnStart: new Audio('btn_start.mp3'),
       powerGlitch: new Audio('power_glitch.mp3'),
       powerOff: new Audio('power_off.mp3'),
       countdownTick: new Audio('countdown_tick.mp3'),
       gameStartGo: new Audio('game_start_go.mp3'),
-      // 探索互動
       radarBeep: new Audio('radar_beep.mp3'),
       correctDing: new Audio('correct_ding.mp3'),
       wrongBuzz: new Audio('wrong_buzz.mp3'),
       candyFly: new Audio('candy_fly.mp3'),
       powerupStar: new Audio('powerup_star.mp3'),
-      // 彩蛋
       eggTiger: new Audio('egg_tiger.mp3'),
       eggGenie: new Audio('egg_genie.mp3'),
       eggSign: new Audio('egg_sign.mp3'),
-      // 開箱與糖果雨
       boxTap: new Audio('box_tap.mp3'),
       boxChargeFull: new Audio('box_charge_full.mp3'),
       boxBurst: new Audio('box_burst.mp3'),
@@ -574,37 +1796,30 @@
       gameVictory: new Audio('game_victory.mp3')
     };
 
-    // BGM 預設參數
     SOUNDS.bgm.loop = true;
     SOUNDS.bgm.volume = 0.22;
     let isBgmPlaying = false;
 
-    // 通用播放函數（支援音量、重置與防呆）
     function playSfx(audioObj, volume = 0.8) {
       if (!audioObj) return;
       try {
         audioObj.currentTime = 0;
         audioObj.volume = volume;
-        const playPromise = audioObj.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            // 自動防呆：若檔案不存在或瀏覽器限制，不報錯阻礙遊戲
-          });
-        }
+        const p = audioObj.play();
+        if (p !== undefined) p.catch(() => {});
       } catch (err) {}
     }
 
-    // 播放自訂路徑音效檔
     function playCustomFile(filePath, volume = 0.8) {
       if (!filePath) return;
       try {
-        const tempAudio = new Audio(filePath);
-        tempAudio.volume = volume;
-        tempAudio.play().catch(e => {});
+        const audio = new Audio(filePath);
+        audio.volume = volume;
+        const p = audio.play();
+        if (p !== undefined) p.catch(() => {});
       } catch (err) {}
     }
 
-    // 切換 BGM 播放狀態
     function toggleBGM() {
       const btn = document.getElementById('bgm-toggle-btn');
       if (isBgmPlaying) {
@@ -615,18 +1830,78 @@
         SOUNDS.bgm.play().then(() => {
           isBgmPlaying = true;
           btn.innerText = '🎵 音樂: 開';
-        }).catch(e => {});
+        }).catch(() => {});
       }
     }
 
+    // TTS 語音封裝
+    let currentUtterance = null;
+    function speak(text, onEndCallback = null) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        currentUtterance = new SpeechSynthesisUtterance(text);
+        currentUtterance.lang = 'en-US';
+        currentUtterance.rate = 0.85;
+        currentUtterance.pitch = 1.0;
+        if (onEndCallback) currentUtterance.onend = onEndCallback;
+        currentUtterance.onerror = () => {};
+        window.speechSynthesis.speak(currentUtterance);
+      } catch (e) {}
+    }
+
+    function warmupSpeechAudio() {
+      if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
+        const silentUtter = new SpeechSynthesisUtterance('');
+        silentUtter.volume = 0;
+        window.speechSynthesis.speak(silentUtter);
+      }
+    }
+
+    // 定時器統一管理池
+    const timerPool = {
+      countdown: null,
+      timedGame: null,
+      hintTimer: null,
+      autoAdvance: null,
+      candyTimeouts: []
+    };
+
+    function clearAllGameTimers() {
+      if (timerPool.countdown) clearInterval(timerPool.countdown);
+      if (timerPool.timedGame) clearInterval(timerPool.timedGame);
+      if (timerPool.hintTimer) clearTimeout(timerPool.hintTimer);
+      if (timerPool.autoAdvance) clearTimeout(timerPool.autoAdvance);
+      timerPool.candyTimeouts.forEach(id => clearTimeout(id));
+      timerPool.candyTimeouts = [];
+      timerPool.countdown = null;
+      timerPool.timedGame = null;
+      timerPool.hintTimer = null;
+      timerPool.autoAdvance = null;
+    }
+
+    let currentAppMode = 'preview'; // 'preview' | 'part1' | 'part2' | 'game'
+    let gameSubMode = 'listening';
     let remainingTargets = [];
     let currentTarget = null;
     let foundCount = 0;
     let isPlaying = false;
+    let activeCardData = null;
+
+    // Part 2 閃視卡索引
+    let drillIndex = 0;
+
+    let gameStartTime = 0;
+    let totalClicks = 0;
+    let wrongClicksInRow = 0;
+    let timeLimitRemaining = 60;
 
     const CHARGE_THRESHOLD = 15;
     let currentCharge = 0;
     let isExploded = false;
+
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const MAX_TAP_MOVE_TOLERANCE = isTouchDevice ? 15 : 8;
 
     const viewport = document.getElementById('viewport');
     const world = document.getElementById('world');
@@ -634,26 +1909,32 @@
     const overlay = document.getElementById('dark-overlay');
     const flickerOverlay = document.getElementById('flicker-overlay');
     const startScreen = document.getElementById('start-screen');
+    const modeModal = document.getElementById('mode-modal');
     const countdownOverlay = document.getElementById('countdown-overlay');
     const countdownNumber = document.getElementById('countdown-number');
     const headerBar = document.getElementById('header-bar');
+    const returnHomeBtn = document.getElementById('return-home-btn');
+    const hintPill = document.getElementById('hint-pill');
     const guidePill = document.getElementById('guide-pill');
     const taskText = document.getElementById('task-text');
     const foundCounter = document.getElementById('found-count');
+    const timerBarContainer = document.getElementById('timer-bar-container');
+    const timerBarFill = document.getElementById('timer-bar-fill');
+    const flashcardModal = document.getElementById('flashcard-modal');
+    
+    const victoryModal = document.getElementById('victory-modal');
     const mysteryModal = document.getElementById('mystery-box-modal');
     const boxIcon = document.getElementById('box-icon');
     const boxHint = document.getElementById('box-hint');
     const chargeBarFill = document.getElementById('charge-bar-fill');
     const restartBtn = document.getElementById('restart-btn');
     const magicStar = document.getElementById('magic-star');
+    const vocabBar = document.getElementById('vocab-bar');
 
-    let posX = 0;
-    let posY = 0;
+    let posX = 0, posY = 0;
     let isDragging = false;
-    let startX = 0;
-    let startY = 0;
+    let startX = 0, startY = 0;
 
-    // 音效雷達（越靠近目標，頻率越急促播放 radar_beep.mp3）
     let lastRadarTime = 0;
     function checkRadarProximity(worldX, worldY) {
       if (!isPlaying || !currentTarget) return;
@@ -686,7 +1967,6 @@
 
       world.style.width = `${baseWidth * scaleMultiplier}px`;
       world.style.height = `${baseHeight * scaleMultiplier}px`;
-
       applyTransform();
     }
 
@@ -705,7 +1985,6 @@
       } else {
         posY = (viewport.clientHeight - world.offsetHeight) / 2;
       }
-
       world.style.transform = `translate(${posX}px, ${posY}px)`;
     }
 
@@ -715,16 +1994,61 @@
       applyTransform();
     }
 
+    function initVocabBar() {
+      vocabBar.innerHTML = '';
+      VOCABULARY.forEach(item => {
+        const pill = document.createElement('div');
+        pill.className = 'vocab-pill';
+        pill.innerText = `${item.id}. ${item.word}`;
+        pill.onclick = () => {
+          if (currentAppMode === 'part1') {
+            openFlashcard(item);
+          } else if (currentAppMode === 'part2') {
+            drillIndex = VOCABULARY.findIndex(v => v.word === item.word);
+            updateDrillDisplay();
+          }
+        };
+        vocabBar.appendChild(pill);
+      });
+    }
+
     function showFullPosterPreview() {
+      clearAllGameTimers();
+      currentAppMode = 'preview';
       isPlaying = false;
+
       headerBar.style.display = 'none';
       guidePill.style.display = 'none';
+      hintPill.style.display = 'none';
+      vocabBar.style.display = 'none';
+      returnHomeBtn.style.display = 'none';
+      timerBarContainer.style.display = 'none';
+      modeModal.style.display = 'none';
+      flashcardModal.style.display = 'none';
+      
+      victoryModal.style.display = 'none';
+      mysteryModal.style.display = 'none';
       startScreen.style.display = 'flex';
-      overlay.classList.remove('active');
+      const p2TopBar = document.getElementById('p2-top-bar');
+      if (p2TopBar) p2TopBar.style.display = 'none';
+      const p2Mag = document.getElementById('p2-magnifier');
+      if (p2Mag) p2Mag.style.display = 'none';
+      const guideModal = document.getElementById('guide-modal');
+      if (guideModal) guideModal.style.display = 'none';
+      const storyModal = document.getElementById('story-intro-modal');
+      if (storyModal) storyModal.style.display = 'none';
+
+      overlay.classList.remove('active', 'super-mode');
       flickerOverlay.style.opacity = '0';
       flickerOverlay.classList.remove('flickering-animation');
 
-      document.querySelectorAll('.target-box, .easter-egg').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.target-box').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('explore-mode', 'found', 'hint-beacon');
+        const arrow = el.querySelector('.hint-arrow');
+        if (arrow) arrow.remove();
+      });
+      document.querySelectorAll('.easter-egg').forEach(el => el.style.display = 'none');
       magicStar.style.display = 'none';
 
       setWorldSize(1.0);
@@ -734,25 +2058,255 @@
     }
 
     posterImg.onload = () => {
+      initVocabBar();
       showFullPosterPreview();
     };
 
-    // === 開始停電過場 ===
-    function startPowerOutageSequence() {
+    // ==========================================
+    // 📖 Part 1：單字教學入口
+    // ==========================================
+    function enterPart1Mode() {
+      warmupSpeechAudio();
+      currentAppMode = 'part1';
+      isPlaying = false;
       startScreen.style.display = 'none';
-      playSfx(SOUNDS.btnStart, 0.9);
+      headerBar.style.display = 'none';
+      guidePill.style.display = 'none';
+      returnHomeBtn.style.display = 'block';
+      vocabBar.style.display = 'flex';
 
-      // 開始播放 BGM（使用者互動後解鎖音訊）
-      if (!isBgmPlaying) {
-        SOUNDS.bgm.play().then(() => { isBgmPlaying = true; }).catch(e => {});
+      overlay.classList.remove('active');
+      flickerOverlay.style.opacity = '0';
+
+      document.querySelectorAll('.target-box').forEach(el => {
+        el.classList.add('explore-mode');
+        el.classList.remove('found', 'hint-beacon');
+      });
+      document.querySelectorAll('.easter-egg').forEach(el => el.style.display = 'block');
+      magicStar.style.display = 'none';
+
+      setWorldSize(1.0);
+      posX = (viewport.clientWidth - world.offsetWidth) / 2;
+      posY = (viewport.clientHeight - world.offsetHeight) / 2;
+      applyTransform();
+
+      speak("Part 1: Words and Phonics! Tap on any monster to learn!");
+    }
+
+    function openFlashcard(item) {
+      activeCardData = item;
+      const avatarEl = document.getElementById('fc-avatar-img');
+      avatarEl.style.display = 'block';
+      avatarEl.src = item.imgSrc;
+
+      document.getElementById('fc-word').innerText = item.word;
+      document.getElementById('fc-phonics').innerText = item.phonics;
+      document.getElementById('quick-quiz-area').style.display = 'none';
+
+      flashcardModal.style.display = 'flex';
+      playSfx(SOUNDS.correctDing, 0.4);
+      if (item.sfx) {
+        setTimeout(() => playCustomFile(item.sfx, 0.8), 250);
+      }
+    }
+
+    function closeFlashcard() {
+      flashcardModal.style.display = 'none';
+    }
+
+    function speakSingleWord() {
+      if (activeCardData) speak(activeCardData.word);
+    }
+    function speakPhonics() {
+      if (activeCardData) speak(activeCardData.phonics);
+    }
+
+    function toggleQuickQuiz() {
+      const quizArea = document.getElementById('quick-quiz-area');
+      if (quizArea.style.display === 'flex') {
+        quizArea.style.display = 'none';
+        return;
+      }
+      quizArea.style.display = 'flex';
+      setupQuickQuizQuestion();
+    }
+
+    function setupQuickQuizQuestion() {
+      if (!activeCardData) return;
+      const grid = document.getElementById('quiz-grid');
+      grid.innerHTML = '';
+
+      const wrongPool = VOCABULARY.filter(v => v.word !== activeCardData.word).sort(() => Math.random() - 0.5);
+      const options = [activeCardData, wrongPool[0], wrongPool[1]].sort(() => Math.random() - 0.5);
+
+      options.forEach(opt => {
+        const card = document.createElement('div');
+        card.className = 'quiz-option-card';
+        card.innerHTML = `
+          <img class="quiz-img" src="${opt.imgSrc}" alt="${opt.word}" onerror="this.outerHTML='<div style=\'font-size:36px;line-height:105px;text-align:center;\'>🎃</div>'">
+          <div class="quiz-word-label">${opt.word}</div>
+        `;
+        card.onclick = () => checkQuizAnswer(card, opt);
+        grid.appendChild(card);
+      });
+
+      speak(`Where is the ${activeCardData.word}?`);
+    }
+
+    function checkQuizAnswer(cardEl, chosenItem) {
+      if (chosenItem.word === activeCardData.word) {
+        cardEl.classList.add('correct');
+        playSfx(SOUNDS.correctDing, 0.9);
+        speak(`Bingo! Great job! It is a ${activeCardData.word}!`);
+        spawnFlyingCandy(window.innerWidth / 2, window.innerHeight / 2);
+      } else {
+        cardEl.classList.add('wrong');
+        playSfx(SOUNDS.wrongBuzz, 0.6);
+        speak(`Listen again! Where is the ${activeCardData.word}?`);
+        setTimeout(() => cardEl.classList.remove('wrong'), 400);
+      }
+    }
+
+    // ==========================================
+    // 💬 Part 2：句子教學入口 (快閃替換卡)
+    // ==========================================
+    function enterPart2Mode() {
+      warmupSpeechAudio();
+      currentAppMode = 'part2';
+      isPlaying = false;
+      startScreen.style.display = 'none';
+      headerBar.style.display = 'none';
+      guidePill.style.display = 'none';
+      returnHomeBtn.style.display = 'block';
+      vocabBar.style.display = 'flex';
+      document.getElementById('p2-top-bar').style.display = 'flex';
+      document.getElementById('p2-magnifier').style.display = 'flex';
+
+      overlay.classList.remove('active');
+      flickerOverlay.style.opacity = '0';
+
+      document.querySelectorAll('.target-box').forEach(el => {
+        el.style.display = 'block';
+        el.classList.remove('explore-mode', 'found', 'hint-beacon');
+      });
+      document.querySelectorAll('.easter-egg').forEach(el => el.style.display = 'block');
+      magicStar.style.display = 'none';
+
+      setWorldSize(1.0);
+      posX = (viewport.clientWidth - world.offsetWidth) / 2;
+      posY = (viewport.clientHeight - world.offsetHeight) / 2;
+      applyTransform();
+
+      drillIndex = 0;
+      updateDrillDisplay();
+    }
+
+    function closePart2Modal() {
+      
+      showFullPosterPreview();
+    }
+
+    let drillDebounceTimer = null;
+    function updateDrillDisplay() {
+      const current = VOCABULARY[drillIndex];
+      const targetTextEl = document.getElementById('p2-sentence-target');
+      const magEl = document.getElementById('p2-magnifier');
+      const magImg = document.getElementById('mag-glass-img');
+      const magBadge = document.getElementById('mag-badge-text');
+
+      if (targetTextEl) {
+        targetTextEl.innerText = current.word;
+      }
+      if (magBadge) {
+        magBadge.innerText = `${current.id}. ${current.word}`;
+      }
+      if (magImg) {
+        magImg.style.display = 'block';
+        magImg.src = current.imgSrc;
       }
 
-      // 1. 電力接觸不良閃爍
+      // 移動放大鏡到海報中該角色的中心座標
+      const targetBox = document.getElementById(current.elId);
+      if (targetBox && magEl) {
+        const cX = targetBox.offsetLeft + targetBox.offsetWidth / 2;
+        const cY = targetBox.offsetTop + targetBox.offsetHeight / 2;
+        magEl.style.left = `${cX}px`;
+        magEl.style.top = `${cY}px`;
+      }
+
+      // 更新底部 8 個按鈕的高亮選取狀態
+      document.querySelectorAll('.vocab-pill').forEach((pill, idx) => {
+        if (idx === drillIndex) {
+          pill.classList.add('active');
+          pill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        } else {
+          pill.classList.remove('active');
+        }
+      });
+
+      playSfx(SOUNDS.candyFly, 0.4);
+
+      if (drillDebounceTimer) clearTimeout(drillDebounceTimer);
+      drillDebounceTimer = setTimeout(() => {
+        // 僅發出問句 "What do you see?"，答句留白給學生主動開口回答
+        speak("What do you see?");
+      }, 120);
+    }
+
+    function nextDrillCard() {
+      drillIndex = (drillIndex + 1) % VOCABULARY.length;
+      updateDrillDisplay();
+    }
+
+    function prevDrillCard() {
+      drillIndex = (drillIndex - 1 + VOCABULARY.length) % VOCABULARY.length;
+      updateDrillDisplay();
+    }
+
+    function randomDrillCard() {
+      drillIndex = Math.floor(Math.random() * VOCABULARY.length);
+      updateDrillDisplay();
+    }
+
+    function speakCurrentDrillSentence() {
+      const current = VOCABULARY[drillIndex];
+      speak(`I see a ${current.word}!`);
+    }
+
+    // ==========================================
+    // 🎃 Challenge：尋寶遊戲 (保留原功能)
+    // ==========================================
+    function openModeSelectModal() {
+      warmupSpeechAudio();
+      modeModal.style.display = 'flex';
+      playSfx(SOUNDS.btnStart, 0.6);
+    }
+    function closeModeSelectModal() {
+      modeModal.style.display = 'none';
+    }
+
+    function confirmStartGame(mode) {
+      gameSubMode = mode;
+      closeModeSelectModal();
+      startPowerOutageSequence();
+    }
+
+    function startPowerOutageSequence() {
+      clearAllGameTimers();
+      currentAppMode = 'game';
+      startScreen.style.display = 'none';
+      returnHomeBtn.style.display = 'none';
+      vocabBar.style.display = 'none';
+      playSfx(SOUNDS.btnStart, 0.9);
+
+      if (!isBgmPlaying) {
+        SOUNDS.bgm.play().then(() => { isBgmPlaying = true; }).catch(() => {});
+      }
+
       flickerOverlay.classList.add('flickering-animation');
       playSfx(SOUNDS.powerGlitch, 0.9);
 
-      // 2. 徹底跳電全黑 + 倒數計時
-      setTimeout(() => {
+      timerPool.countdown = setTimeout(() => {
         playSfx(SOUNDS.powerOff, 0.8);
         countdownOverlay.style.display = 'flex';
         let count = 3;
@@ -762,9 +2316,6 @@
         const countInterval = setInterval(() => {
           count--;
           if (count > 0) {
-            countdownNumber.style.animation = 'none';
-            void countdownNumber.offsetWidth;
-            countdownNumber.style.animation = 'countZoom 1s ease-out';
             countdownNumber.innerText = count;
             playSfx(SOUNDS.countdownTick, 0.8);
           } else {
@@ -777,7 +2328,7 @@
               flickerOverlay.classList.remove('flickering-animation');
               flickerOverlay.style.opacity = '0';
               startExplorationGame();
-            }, 650);
+            }, 600);
           }
         }, 1000);
       }, 2200);
@@ -787,44 +2338,128 @@
       isPlaying = true;
       foundCount = 0;
       foundCounter.innerText = foundCount;
+      totalClicks = 0;
+      wrongClicksInRow = 0;
+      gameStartTime = Date.now();
+
       headerBar.style.display = 'flex';
+      returnHomeBtn.style.display = 'block';
       guidePill.style.display = 'block';
       overlay.classList.add('active');
-      overlay.classList.remove('lights-on');
+      overlay.classList.remove('lights-on', 'super-mode');
+      victoryModal.style.display = 'none';
       mysteryModal.style.display = 'none';
 
-      currentCharge = 0;
-      isExploded = false;
-      chargeBarFill.style.width = '0%';
-      boxIcon.innerText = "🎁";
-      boxIcon.className = "";
-      boxHint.innerText = `快速連點充能中... 0%`;
-      restartBtn.style.display = 'none';
-
-      document.querySelectorAll('.target-box, .easter-egg').forEach(el => {
+      document.querySelectorAll('.target-box').forEach(el => {
         el.style.display = 'block';
-        el.classList.remove('found');
+        el.classList.remove('explore-mode', 'found', 'hint-beacon');
+        const arrow = el.querySelector('.hint-arrow');
+        if (arrow) arrow.remove();
       });
+      document.querySelectorAll('.easter-egg').forEach(el => el.style.display = 'block');
 
       setWorldSize(2.0);
       centerMap();
       spawnMagicStar();
 
+      if (gameSubMode === 'timed') {
+        timerBarContainer.style.display = 'block';
+        timeLimitRemaining = 60;
+        startTimedModeLoop();
+      } else {
+        timerBarContainer.style.display = 'none';
+      }
+
       remainingTargets = [...VOCABULARY].sort(() => Math.random() - 0.5);
       nextQuestion();
+    }
+
+    function startTimedModeLoop() {
+      timerBarFill.style.width = '100%';
+      timerPool.timedGame = setInterval(() => {
+        timeLimitRemaining--;
+        const pct = Math.max(0, (timeLimitRemaining / 60) * 100);
+        timerBarFill.style.width = `${pct}%`;
+        if (timeLimitRemaining <= 0) {
+          clearInterval(timerPool.timedGame);
+          endGameWithVictory();
+        }
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      hideHintPill();
+      wrongClicksInRow = 0;
+
+      if (remainingTargets.length === 0) {
+        endGameWithVictory();
+        return;
+      }
+
+      currentTarget = remainingTargets.pop();
+
+      if (gameSubMode === 'listening') {
+        taskText.innerText = `Find the 【 ❓ 聽音尋物 】`;
+      } else {
+        taskText.innerText = `Find the 【 ${currentTarget.word} 】`;
+      }
+
+      speakCurrentTarget();
+
+      if (timerPool.hintTimer) clearTimeout(timerPool.hintTimer);
+      timerPool.hintTimer = setTimeout(() => {
+        showScaffoldingHint();
+      }, 15000);
+    }
+
+    function speakCurrentTarget() {
+      if (!currentTarget) return;
+      if (gameSubMode === 'reading') return;
+
+      const questions = [
+        `Where is the ${currentTarget.word}?`,
+        `Can you find the ${currentTarget.word}?`,
+        `Look! Where is the ${currentTarget.word}?`,
+        `I am looking for the ${currentTarget.word}!`
+      ];
+      const q = questions[Math.floor(Math.random() * questions.length)];
+      speak(q);
+    }
+
+    function showScaffoldingHint() {
+      if (!isPlaying || !currentTarget) return;
+      hintPill.innerText = `💡 線索：${currentTarget.hint}`;
+      hintPill.style.display = 'block';
+      speak(`Hint: ${currentTarget.word}`);
+    }
+
+    function hideHintPill() {
+      hintPill.style.display = 'none';
+    }
+
+    function triggerManualHint() {
+      if (!isPlaying || !currentTarget) return;
+      showScaffoldingHint();
+      const targetEl = document.getElementById(currentTarget.elId);
+      if (targetEl) {
+        targetEl.classList.add('hint-beacon');
+        if (!targetEl.querySelector('.hint-arrow')) {
+          const arrow = document.createElement('div');
+          arrow.className = 'hint-arrow';
+          arrow.innerText = '👇';
+          targetEl.appendChild(arrow);
+        }
+      }
     }
 
     function updateLightPosition(screenX, screenY) {
       if (!isPlaying) return;
       const worldX = screenX - posX;
       const worldY = screenY - posY;
-
       const px = (worldX / world.offsetWidth) * 100;
       const py = (worldY / world.offsetHeight) * 100;
-
       overlay.style.setProperty('--light-x', `${px}%`);
       overlay.style.setProperty('--light-y', `${py}%`);
-
       checkRadarProximity(worldX, worldY);
     }
 
@@ -840,7 +2475,6 @@
       if (!isPlaying) return;
       updateLightPosition(e.clientX, e.clientY);
       if (!isDragging) return;
-
       posX = e.clientX - startX;
       posY = e.clientY - startY;
       applyTransform();
@@ -849,23 +2483,6 @@
     window.addEventListener('pointerup', () => {
       isDragging = false;
     });
-
-    // 英語語音發音
-    function speak(text) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'en-US';
-        utter.rate = 0.85;
-        window.speechSynthesis.speak(utter);
-      }
-    }
-
-    function speakCurrentTarget() {
-      if (currentTarget) {
-        speak(`Where is the ${currentTarget.word}?`);
-      }
-    }
 
     function spawnMagicStar() {
       magicStar.style.display = 'block';
@@ -878,14 +2495,10 @@
       magicStar.style.display = 'none';
       playSfx(SOUNDS.powerupStar, 0.9);
       speak("Super Spotlight activated!");
-
       overlay.classList.add('super-mode');
-      setTimeout(() => {
-        overlay.classList.remove('super-mode');
-      }, 6000);
+      setTimeout(() => overlay.classList.remove('super-mode'), 6000);
     });
 
-    // 彩蛋點擊音效
     document.getElementById('egg-tiger').addEventListener('pointerup', () => {
       playSfx(SOUNDS.eggTiger, 0.9);
       speak("Roar! I am a cute tiger!");
@@ -899,16 +2512,6 @@
       speak("Trick or treat! Smell my feet!");
     });
 
-    function nextQuestion() {
-      if (remainingTargets.length === 0) {
-        triggerMysteryBox();
-        return;
-      }
-      currentTarget = remainingTargets.pop();
-      taskText.innerText = `Find the 【 ${currentTarget.word} 】`;
-      speakCurrentTarget();
-    }
-
     let clickStartX = 0, clickStartY = 0;
     document.querySelectorAll('.target-box').forEach(box => {
       box.addEventListener('pointerdown', (e) => {
@@ -918,17 +2521,34 @@
 
       box.addEventListener('pointerup', function(e) {
         const moveDist = Math.hypot(e.clientX - clickStartX, e.clientY - clickStartY);
-        if (moveDist > 8) return;
+        if (moveDist > MAX_TAP_MOVE_TOLERANCE) return;
 
-        if (!currentTarget) return;
         const clickedWord = this.getAttribute('data-word');
+
+        if (currentAppMode === 'part1') {
+          const item = VOCABULARY.find(v => v.word === clickedWord);
+          if (item) openFlashcard(item);
+          return;
+        }
+
+        if (currentAppMode === 'part2') {
+          drillIndex = VOCABULARY.findIndex(v => v.word === clickedWord);
+          updateDrillDisplay();
+          return;
+        }
+
+        if (!isPlaying || !currentTarget) return;
+        totalClicks++;
 
         if (clickedWord === currentTarget.word) {
           this.classList.add('found');
+          this.classList.remove('hint-beacon');
+          const arrow = this.querySelector('.hint-arrow');
+          if (arrow) arrow.remove();
+
           foundCount++;
           foundCounter.innerText = foundCount;
 
-          // 播放答對鈴聲 + 該角色專屬登場音
           playSfx(SOUNDS.correctDing, 0.85);
           if (currentTarget.sfx) {
             setTimeout(() => playCustomFile(currentTarget.sfx, 0.9), 200);
@@ -939,61 +2559,101 @@
 
           currentTarget = null;
           taskText.innerText = `🎉 答對了！`;
-          setTimeout(nextQuestion, 1300);
+          timerPool.autoAdvance = setTimeout(nextQuestion, 1200);
         } else {
-          // 點錯音效
+          wrongClicksInRow++;
           playSfx(SOUNDS.wrongBuzz, 0.6);
           speak(`Try again! Find the ${currentTarget.word}`);
+
+          if (wrongClicksInRow >= 2) {
+            triggerManualHint();
+          }
         }
       });
     });
 
-    // 答對糖果飛入計數器
     function spawnFlyingCandy(clientX, clientY) {
       playSfx(SOUNDS.candyFly, 0.7);
-
       const candy = document.createElement('div');
       candy.className = 'flying-candy';
-      
       const randomImg = CANDY_IMAGES[Math.floor(Math.random() * CANDY_IMAGES.length)];
-      candy.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\\'font-size:70px;\\'>🍬</span>'">`;
-      
-      candy.style.left = `${clientX - 42}px`;
-      candy.style.top = `${clientY - 42}px`;
+      candy.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\'font-size:55px;\'>🍬</span>'">`;
+      candy.style.left = `${clientX - 35}px`;
+      candy.style.top = `${clientY - 35}px`;
       document.body.appendChild(candy);
 
-      const targetRect = document.getElementById('candy-counter').getBoundingClientRect();
+      const counterEl = document.getElementById('candy-counter');
+      const isCounterVisible = counterEl && window.getComputedStyle(headerBar).display !== 'none';
+      
       setTimeout(() => {
-        candy.style.left = `${targetRect.left + 10}px`;
-        candy.style.top = `${targetRect.top + 5}px`;
-        candy.style.transform = 'scale(0.35) rotate(360deg)';
-        candy.style.opacity = '0';
-      }, 50);
+        if (isCounterVisible) {
+          const targetRect = counterEl.getBoundingClientRect();
+          candy.style.left = `${targetRect.left + 10}px`;
+          candy.style.top = `${targetRect.top + 5}px`;
+          candy.style.transform = 'scale(0.3) rotate(360deg)';
+          candy.style.opacity = '0';
+        } else {
+          // 在教學模式中（頂部列隱藏），原地原地向上放大淡出閃耀
+          candy.style.transform = 'translateY(-60px) scale(1.4) rotate(45deg)';
+          candy.style.opacity = '0';
+        }
+      }, 40);
 
-      setTimeout(() => candy.remove(), 950);
+      setTimeout(() => candy.remove(), 900);
+    }
+
+    function endGameWithVictory() {
+      clearAllGameTimers();
+      isPlaying = false;
+      const elapsedSec = Math.max(1, Math.round((Date.now() - gameStartTime) / 1000));
+      const accuracy = totalClicks > 0 ? Math.round((foundCount / totalClicks) * 100) : 100;
+
+      document.getElementById('stat-time').innerText = `${elapsedSec}s`;
+      document.getElementById('stat-accuracy').innerText = `${accuracy}%`;
+      document.getElementById('stat-candies').innerText = `${foundCount} / 8`;
+
+      const starsEl = document.getElementById('victory-stars');
+      if (foundCount >= 8 && accuracy >= 80) {
+        starsEl.innerText = '⭐⭐⭐';
+      } else if (foundCount >= 6) {
+        starsEl.innerText = '⭐⭐';
+      } else {
+        starsEl.innerText = '⭐';
+      }
+
+      playSfx(SOUNDS.gameVictory, 0.9);
+      speak("Mission Complete! Excellent job!");
+      victoryModal.style.display = 'flex';
+    }
+
+    function goToCandyBoxFromVictory() {
+      victoryModal.style.display = 'none';
+      triggerMysteryBox();
     }
 
     function triggerMysteryBox() {
       overlay.classList.add('lights-on');
       mysteryModal.style.display = 'flex';
+      currentCharge = 0;
+      isExploded = false;
+      chargeBarFill.style.width = '0%';
+      boxIcon.innerText = "🎁";
+      boxIcon.className = "";
+      boxHint.innerText = `快速連點充能中... 0%`;
+      restartBtn.style.display = 'none';
       speak("Tap the box together to unleash the candy explosion!");
     }
 
-    // 敲擊箱子充能
     function tapChargeBox() {
       if (isExploded) return;
-
       currentCharge++;
       const progressPercent = Math.min(100, Math.floor((currentCharge / CHARGE_THRESHOLD) * 100));
       chargeBarFill.style.width = `${progressPercent}%`;
 
-      // 敲擊箱子音效
-      playSfx(SOUNDS.boxTap, 0.7 + (currentCharge / CHARGE_THRESHOLD) * 0.3);
-
+      playSfx(SOUNDS.boxTap, 0.6 + (currentCharge / CHARGE_THRESHOLD) * 0.4);
       const scale = 1 + (currentCharge / CHARGE_THRESHOLD) * 0.35;
       boxIcon.style.transform = `scale(${scale})`;
       boxIcon.classList.add('shaking');
-
       boxHint.innerText = `🔥 能量充能中：${progressPercent}%！快點！`;
 
       if (currentCharge >= CHARGE_THRESHOLD) {
@@ -1002,20 +2662,18 @@
       }
     }
 
-    // === 核心噴發：往上噴射 + 旋轉花瓣飄落 ===
     function explodeCandyFountain() {
       isExploded = true;
       boxIcon.classList.remove('shaking');
       boxIcon.innerText = "🎃";
-      boxIcon.style.transform = "scale(1.4)";
+      boxIcon.style.transform = "scale(1.35)";
       boxHint.innerHTML = `💥 轟！糖果大噴發！HAPPY HALLOWEEN! 💥`;
       restartBtn.style.display = 'block';
 
-      // 炸開音效 + 噴射破空聲 + 勝利慶祝樂
       playSfx(SOUNDS.boxBurst, 1.0);
-      setTimeout(() => playSfx(SOUNDS.candyShootWhoosh, 0.9), 100);
-      setTimeout(() => playSfx(SOUNDS.candyPetalFall, 0.8), 650);
-      setTimeout(() => playSfx(SOUNDS.gameVictory, 0.9), 1500);
+      setTimeout(() => playSfx(SOUNDS.candyShootWhoosh, 0.85), 100);
+      setTimeout(() => playSfx(SOUNDS.candyPetalFall, 0.75), 600);
+      setTimeout(() => playSfx(SOUNDS.gameVictory, 0.9), 1400);
 
       speak("Happy Halloween! The candy volcano is erupting!");
 
@@ -1023,13 +2681,14 @@
       const originX = boxRect.left + boxRect.width / 2;
       const originY = boxRect.top + boxRect.height / 2;
 
-      const totalCandies = 100;
-      const intervalMs = 20;
+      const totalCandies = 50;
+      const intervalMs = 25;
 
       for (let i = 0; i < totalCandies; i++) {
-        setTimeout(() => {
+        const id = setTimeout(() => {
           shootPetalCandy(originX, originY);
         }, i * intervalMs);
+        timerPool.candyTimeouts.push(id);
       }
     }
 
@@ -1041,38 +2700,38 @@
       inner.className = 'fountain-candy-inner';
 
       const randomImg = CANDY_IMAGES[Math.floor(Math.random() * CANDY_IMAGES.length)];
-      const size = 85 + Math.floor(Math.random() * 50); 
-      
+      const size = 65 + Math.floor(Math.random() * 40);
+
       node.style.width = `${size}px`;
       node.style.height = `${size}px`;
       node.style.left = `${startX - size / 2}px`;
       node.style.top = `${startY - size / 2}px`;
 
-      inner.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\\'font-size:${size}px;\\'>🍬</span>'">`;
+      inner.innerHTML = `<img src="${randomImg}" alt="candy" onerror="this.outerHTML='<span style=\'font-size:${size}px;\'>🍬</span>'">`;
       node.appendChild(inner);
       document.body.appendChild(node);
 
-      const shootUpDist = -(260 + Math.random() * 360);
-      const shootSideDist = (Math.random() - 0.5) * window.innerWidth * 0.9;
-      const shootDuration = 0.65 + Math.random() * 0.3;
+      const shootUpDist = -(240 + Math.random() * 320);
+      const shootSideDist = (Math.random() - 0.5) * window.innerWidth * 0.88;
+      const shootDuration = 0.6 + Math.random() * 0.25;
       node.style.setProperty('--shoot-duration', `${shootDuration}s`);
 
       requestAnimationFrame(() => {
-        node.style.transform = `translate(${shootSideDist}px, ${shootUpDist}px) scale(1.15) rotate(${Math.random() * 90 - 45}deg)`;
+        node.style.transform = `translate(${shootSideDist}px, ${shootUpDist}px) scale(1.1) rotate(${Math.random() * 60 - 30}deg)`;
       });
 
-      setTimeout(() => {
+      const tid = setTimeout(() => {
         const peakRect = node.getBoundingClientRect();
         node.style.transition = 'none';
         node.style.transform = 'none';
         node.style.left = `${peakRect.left}px`;
         node.style.top = `${peakRect.top}px`;
 
-        const fallDuration = 4.5 + Math.random() * 3.0;
-        const swayDuration = 2.0 + Math.random() * 1.5;
-        const swayDist = 35 + Math.random() * 55;
-        const rotStart = Math.random() * 90 - 45;
-        const rotEnd = rotStart + (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360);
+        const fallDuration = 4.0 + Math.random() * 2.5;
+        const swayDuration = 1.8 + Math.random() * 1.2;
+        const swayDist = 30 + Math.random() * 45;
+        const rotStart = Math.random() * 60 - 30;
+        const rotEnd = rotStart + (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 180);
 
         node.style.setProperty('--peak-top', `${peakRect.top}px`);
         node.style.setProperty('--fall-duration', `${fallDuration}s`);
@@ -1083,14 +2742,14 @@
 
         inner.classList.add('falling-sway');
 
-        setTimeout(() => {
-          node.remove();
-        }, fallDuration * 1000);
+        const removeTid = setTimeout(() => node.remove(), fallDuration * 1000);
+        timerPool.candyTimeouts.push(removeTid);
       }, shootDuration * 1000);
+
+      timerPool.candyTimeouts.push(tid);
     }
 
     function returnToPreview() {
-      mysteryModal.style.display = 'none';
       showFullPosterPreview();
     }
 
@@ -1106,12 +2765,375 @@
     }
 
     window.onload = () => {
+      initVocabBar();
       showFullPosterPreview();
     };
+
     window.onresize = () => {
       setWorldSize(isPlaying ? 2.0 : 1.0);
       applyTransform();
     };
+  
+    // ==========================================
+    // 📝 雙語課程簡案產生器核心邏輯 (匯出 Word .doc)
+    // ==========================================
+    function openLessonPlanModal() {
+      // 自動填入當天最新日期 (YYYY-MM-DD)
+      const today = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('lp-date');
+      if (dateEl && !dateEl.value) {
+        dateEl.value = today;
+      }
+      document.getElementById('lesson-plan-modal').style.display = 'flex';
+      playSfx(SOUNDS.btnStart, 0.6);
+    }
+
+    function closeLessonPlanModal() {
+      document.getElementById('lesson-plan-modal').style.display = 'none';
+    }
+
+    function downloadLessonPlanDoc() {
+      const school = document.getElementById('lp-school').value;
+      const teacher = document.getElementById('lp-teacher').value;
+      const className = document.getElementById('lp-class').value;
+      const students = document.getElementById('lp-students').value;
+      const subject = document.getElementById('lp-subject').value;
+      const source = document.getElementById('lp-source').value;
+      const theme = document.getElementById('lp-theme').value;
+      const dateVal = document.getElementById('lp-date').value;
+      const period = document.getElementById('lp-period').value;
+      const contentGoal = document.getElementById('lp-content-goal').value.replace(/\n/g, '<br>');
+      const langGoal = document.getElementById('lp-lang-goal').value.replace(/\n/g, '<br>');
+      const flow1 = document.getElementById('lp-flow-1').value.replace(/\n/g, '<br>');
+      const flow2 = document.getElementById('lp-flow-2').value.replace(/\n/g, '<br>');
+
+      const docContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>雙語教案(簡案格式)</title>
+          <style>
+            body {
+              font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', sans-serif;
+              font-size: 12pt;
+              line-height: 1.5;
+              color: #000;
+            }
+            h1 {
+              text-align: center;
+              font-size: 18pt;
+              font-weight: bold;
+              margin-bottom: 18px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 16px;
+            }
+            th, td {
+              border: 1px solid #333;
+              padding: 6px 10px;
+              font-size: 11pt;
+              vertical-align: middle;
+            }
+            .section-title {
+              font-size: 13pt;
+              font-weight: bold;
+              margin-top: 14px;
+              margin-bottom: 6px;
+              color: #111;
+            }
+            .section-content {
+              font-size: 11pt;
+              margin-bottom: 12px;
+              line-height: 1.6;
+              padding-left: 6px;
+            }
+            .flow-box {
+              border-top: 1px dashed #666;
+              padding-top: 8px;
+              margin-top: 14px;
+            }
+        
+    /* 教師手冊按鈕與頂部按鈕列 */
+    #top-action-bar {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 2200;
+      display: flex;
+      gap: 10px;
+    }
+    .top-action-btn {
+      background: rgba(18, 9, 32, 0.92);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+    .top-action-btn:active { transform: scale(0.96); }
+    #btn-open-guide {
+      border: 2px solid #ffd166;
+      color: #ffd166;
+      box-shadow: 0 4px 15px rgba(255, 209, 102, 0.35);
+    }
+    #btn-open-guide:hover {
+      background: #ffd166;
+      color: #1a0b2e;
+      transform: scale(1.03);
+    }
+    #btn-open-plan {
+      border: 2px solid #06d6a0;
+      color: #a0e8d0;
+      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.35);
+    }
+    #btn-open-plan:hover {
+      background: #06d6a0;
+      color: #03291e;
+      transform: scale(1.03);
+    }
+
+    /* 教師教學手冊彈窗 */
+    #guide-modal, #story-intro-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 4600;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .guide-modal-card {
+      background: linear-gradient(145deg, #1b0a30, #0a0314);
+      border: 2.5px solid #ffd166;
+      border-radius: 26px;
+      padding: 24px 28px;
+      max-width: 860px;
+      width: 96%;
+      max-height: 92vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(255, 209, 102, 0.45);
+      color: #fff;
+    }
+    .guide-nav-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid rgba(255, 209, 102, 0.25);
+      padding-bottom: 8px;
+    }
+    .guide-tab-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 209, 102, 0.4);
+      color: #d8b4e2;
+      padding: 8px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .guide-tab-btn.active {
+      background: #ffd166;
+      color: #1a0b2e;
+      border-color: #ffd166;
+      box-shadow: 0 2px 10px rgba(255, 209, 102, 0.5);
+    }
+    .guide-tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .guide-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid #ffd166;
+      border-radius: 0 14px 14px 0;
+      padding: 12px 16px;
+    }
+    .guide-box-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffd166;
+      margin-bottom: 6px;
+    }
+
+    /* Part 3 遊戲規則情境卡彈窗 */
+    .story-modal-card {
+      background: linear-gradient(145deg, #240a3e, #0c0217);
+      border: 3px solid #ff7b00;
+      border-radius: 26px;
+      padding: 24px 28px;
+      max-width: 800px;
+      width: 95%;
+      max-height: 92vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 35px rgba(255, 123, 0, 0.5);
+      color: #fff;
+      animation: popIn 0.25s ease-out;
+    }
+    .story-hero-banner {
+      background: radial-gradient(circle, rgba(255, 123, 0, 0.25) 0%, rgba(0, 0, 0, 0.4) 100%);
+      border: 1.5px dashed #ff9e3b;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .story-rules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .rule-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid #7b2cbf;
+      border-radius: 16px;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      text-align: center;
+    }
+    .rule-icon { font-size: 32px; }
+    .rule-title { font-size: 15px; font-weight: 900; color: #ffd166; }
+    .rule-desc { font-size: 13px; color: #d8b4e2; line-height: 1.4; }
+
+  </style>
+        </head>
+        <body>
+          <h1>雙語教案(簡案格式)</h1>
+          <table>
+            <tr>
+              <td style="width: 20%; font-weight: bold; background-color: #f2f2f2;">授課教師:</td>
+              <td style="width: 30%;">${teacher}</td>
+              <td style="width: 20%; font-weight: bold; background-color: #f2f2f2;">學校:</td>
+              <td style="width: 30%;">${school}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f2f2f2;">班級:</td>
+              <td>${className}</td>
+              <td style="font-weight: bold; background-color: #f2f2f2;">學生數:</td>
+              <td>${students}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f2f2f2;">領域學科:</td>
+              <td>${subject}</td>
+              <td style="font-weight: bold; background-color: #f2f2f2;">教材來源:</td>
+              <td>${source}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f2f2f2;">主題或專題名稱:</td>
+              <td>${theme}</td>
+              <td style="font-weight: bold; background-color: #f2f2f2;">日期:</td>
+              <td>${dateVal}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f2f2f2;">教學節次:</td>
+              <td colspan="3">${period}</td>
+            </tr>
+          </table>
+
+          <div class="section-title">學科內容目標:</div>
+          <div class="section-content">${contentGoal}</div>
+
+          <div class="section-title">溝通/語言目標:</div>
+          <div class="section-content">${langGoal}</div>
+
+          <div class="flow-box">
+            <div class="section-title" style="font-size: 14pt; color: #b33900;">第一節教學流程</div>
+            <div class="section-content">${flow1}</div>
+          </div>
+
+          <div class="flow-box">
+            <div class="section-title" style="font-size: 14pt; color: #b33900;">第二節教學流程</div>
+            <div class="section-content">${flow2}</div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // 建立包含 Word MIME 格式的 Blob，可直接被 Microsoft Word / LibreOffice 開啟編輯
+      const blob = new Blob(['\ufeff' + docContent], {
+        type: 'application/msword;charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${school}_${className}_雙語教學簡案.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.appendChild(a);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+
+      playSfx(SOUNDS.correctDing, 0.9);
+      closeLessonPlanModal();
+    }
+
+
+    // ==========================================
+    // 📖 教師教學指引彈窗邏輯 (Teacher's Guide)
+    // ==========================================
+    function openTeacherGuideModal() {
+      document.getElementById('guide-modal').style.display = 'flex';
+      playSfx(SOUNDS.btnStart, 0.5);
+    }
+
+    function closeTeacherGuideModal() {
+      document.getElementById('guide-modal').style.display = 'none';
+    }
+
+    function switchGuideTab(tabId) {
+      // 切換按鈕 active 樣式
+      document.querySelectorAll('.guide-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+
+      // 切換內容顯示
+      const tabs = ['time', 'skills', 'tech'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`tab-content-${t}`);
+        if (el) el.style.display = (t === tabId) ? 'flex' : 'none';
+      });
+      playSfx(SOUNDS.btnStart, 0.4);
+    }
+
+    // ==========================================
+    // 🎃 Part 3 遊戲規則情境解說邏輯 (Story Intro)
+    // ==========================================
+    function openStoryIntroModal() {
+      warmupSpeechAudio();
+      document.getElementById('story-intro-modal').style.display = 'flex';
+      playSfx(SOUNDS.btnStart, 0.6);
+      speak("Agent Mission: Retrieve the stolen candies from the haunted house!");
+    }
+
+    function closeStoryIntroModal() {
+      document.getElementById('story-intro-modal').style.display = 'none';
+    }
+
+    function proceedToModeSelect() {
+      closeStoryIntroModal();
+      openModeSelectModal();
+    }
+
   </script>
 </body>
 </html>
